@@ -7,11 +7,13 @@ agent trading authority.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -65,14 +67,80 @@ class KisSettings:
 class KisClient:
     """Small, testable client for KIS domestic daily OHLCV quotations."""
 
-    def __init__(self, settings: KisSettings, session: requests.Session | None = None):
+    def __init__(
+        self,
+        settings: KisSettings,
+        session: requests.Session | None = None,
+        *,
+        cache_tokens: bool | None = None,
+    ):
         self.settings = settings
         self.session = session or requests.Session()
         self._access_token: str | None = None
+        self._cache_tokens = session is None if cache_tokens is None else cache_tokens
+
+    @property
+    def _token_cache_path(self) -> Path:
+        configured = os.getenv("KIS_TOKEN_CACHE_PATH", "").strip()
+        if configured:
+            return Path(configured).expanduser()
+        return Path.cwd() / ".cache" / f"kis_access_token_{self.settings.environment}.json"
+
+    def _load_cached_token(self) -> str | None:
+        if not self._cache_tokens:
+            return None
+        try:
+            cached = json.loads(self._token_cache_path.read_text(encoding="utf-8"))
+            expires_at = datetime.strptime(cached["expires_at"], "%Y-%m-%d %H:%M:%S")
+            if (
+                cached.get("environment") != self.settings.environment
+                or cached.get("base_url") != self.settings.resolved_base_url
+                or expires_at <= datetime.now() + timedelta(minutes=1)
+            ):
+                return None
+            token = cached.get("access_token")
+            return token if isinstance(token, str) and token else None
+        except (FileNotFoundError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            return None
+
+    def _save_cached_token(self, token: str, expires_at: str | None) -> None:
+        if not self._cache_tokens or not expires_at:
+            return
+        try:
+            # Validate the broker-provided expiry rather than guessing a TTL.
+            datetime.strptime(expires_at, "%Y-%m-%d %H:%M:%S")
+            path = self._token_cache_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(
+                    {
+                        "access_token": token,
+                        "expires_at": expires_at,
+                        "environment": self.settings.environment,
+                        "base_url": self.settings.resolved_base_url,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            path.chmod(0o600)
+        except (OSError, ValueError):
+            # Caching is an optimization only. A live token remains usable.
+            return
+
+    def _clear_cached_token(self) -> None:
+        if not self._cache_tokens:
+            return
+        try:
+            self._token_cache_path.unlink(missing_ok=True)
+        except OSError:
+            return
 
     def _token(self) -> str:
         if self._access_token:
             return self._access_token
+        if cached_token := self._load_cached_token():
+            self._access_token = cached_token
+            return cached_token
         response = self.session.post(
             f"{self.settings.resolved_base_url}{_TOKEN_PATH}",
             headers={"content-type": "application/json"},
@@ -97,6 +165,7 @@ class KisClient:
         if not token:
             raise RuntimeError(f"KIS token request failed: {payload.get('msg1', payload)}")
         self._access_token = token
+        self._save_cached_token(token, payload.get("access_token_token_expired"))
         return token
 
     def _daily_request(self, symbol: str, start: date, end: date) -> list[dict[str, Any]]:
@@ -132,6 +201,7 @@ class KisClient:
                 return payload.get("output2") or []
             if attempt == 0 and payload.get("msg_cd") == "EGW00123":
                 self._access_token = None
+                self._clear_cached_token()
                 continue
             raise RuntimeError(f"KIS daily quotation failed: {payload.get('msg_cd')} {payload.get('msg1')}")
         raise RuntimeError("KIS daily quotation failed after refreshing the access token.")

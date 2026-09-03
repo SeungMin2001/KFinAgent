@@ -34,6 +34,11 @@ from tradingagents.korea import (  # noqa: E402, I001
 )
 from tradingagents.dataflows.korean_evidence import enhanced_korean_evidence  # noqa: E402, I001
 from tradingagents.dataflows.kronos import KronosSettings  # noqa: E402, I001
+from tradingagents.visuals import (  # noqa: E402, I001
+    append_visual_section,
+    build_visual_summary,
+    write_market_overview_svg,
+)
 
 
 STAGE_LABELS = {
@@ -135,6 +140,11 @@ def write_evidence_manifest(
 - Bull / Bear / Research Manager / Trader / Risk / Portfolio Manager: receive the Market Agent report and debate outputs downstream.
 - No order or account API is used.
 
+## Visual evidence
+
+- [KIS market overview and Kronos forecast](visuals/market_overview.svg)
+- The chart is rendered from the same verified KIS candles and Kronos output used in this snapshot.
+
 ## Complete source-attributed snapshot
 
 {snapshot}
@@ -192,6 +202,7 @@ def main() -> None:
         # Do this before constructing/running the agent workflow.  There is no
         # fixture, cached quote, or secondary provider on this path.
         snapshot, market_bars = verify_kis_data_access_with_bars(args.symbol, args.date, overrides)
+        snapshot = f"{snapshot}\n\n{build_visual_summary(market_bars)}"
     except Exception as exc:  # noqa: BLE001 - show the live KIS failure clearly to CLI users
         parser.exit(2, f"KIS live data verification failed; analysis was not started: {exc}\n")
 
@@ -225,6 +236,8 @@ def main() -> None:
         verified_market_snapshot=snapshot,
     )
     path = graph.save_reports(state, args.symbol)
+    visual_path = write_market_overview_svg(path.parent / "visuals", market_bars, snapshot)
+    append_visual_section(path, visual_path)
     evidence_path = write_evidence_manifest(
         path, args.symbol, args.date, snapshot, args.enhanced, kronos_mode != "disabled"
     )
@@ -232,6 +245,7 @@ def main() -> None:
     print(f"Final signal: {signal}")
     print(f"Report written to: {path}")
     print(f"Evidence manifest written to: {evidence_path}")
+    print(f"Visual evidence written to: {visual_path}")
 
 
 if __name__ == "__main__":

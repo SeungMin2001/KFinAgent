@@ -14,7 +14,7 @@ API 키·토큰·개인정보는 절대 기록하지 않는다.
 - OpenDART: 한국 기업 공시
 - FRED: 미국 금리·물가·국채·달러·VIX
 - 한국은행 ECOS: 한국 금리·국채·물가 보조 지표
-- Kronos: 별도 GPU API에서 제공할 캔들 시계열 예측 모델 (아직 클라우드 미배포)
+- Kronos: RunPod GPU API로 배포한 캔들 시계열 예측 모델
 
 ## 현재 구현 상태
 
@@ -36,6 +36,8 @@ API 키·토큰·개인정보는 절대 기록하지 않는다.
 - Market Agent는 KIS 가격·기술지표와 네 Evidence report를 받아 충돌을 종합함
 - 실행 중 진행 단계 출력, `--verbose`일 때 각 Agent 출력 표시
 - 완료된 리포트마다 `0_evidence.md` 생성
+- 보고서에 검증된 KIS 캔들·거래량·RSI·Kronos 중앙 예측 경로/최종 p10-p90 범위를 담은 `visuals/market_overview.svg` 생성
+- 차트와 동일한 원천 캔들의 결정론적 요약을 Market Agent에 텍스트로 제공한다. 현재 Agent는 이미지 자체를 읽는 Vision 방식이 아니다.
 
 ### 아직 미완성인 것
 
@@ -116,7 +118,7 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 - KIS 당일 확정 수급은 15:40 이전 `OPSQ2001`이 날 수 있다. 분석일이 오늘인 경우에만 직전 완료 거래일의 실제 KIS 수급을 조회하고 요청일·실제 수급 기준일을 모두 기록한다.
 - 날짜는 point-in-time 기준으로 다뤄야 한다. 특히 CPI는 월간 발표값이므로 분석일 당일 데이터처럼 취급하면 안 된다.
 - ECOS는 분석일 이후 관측치를 차단하지만 과거 vintage를 제공하지 않으므로 개정치 누수는 완전히 제거할 수 없다. 엄밀한 백테스트에는 자체 일별 snapshot 보관이 필요하다.
-- Evidence Agent 3개는 `--enhanced`에서만 실행되며 현재 전체 역할 Agent 수는 12개다.
+- `--enhanced --kronos-mode remote`에서는 Evidence Agent 4개가 병렬 실행되며 전체 역할 Agent 수는 13개다.
 - iCloud 안의 `.venv`를 두 기기가 공유하면 절대경로가 깨진다. `bootstrap_local_env.sh`로 기기별 환경을 `~/.virtualenvs/` 아래 생성한다.
 - Python 3.12와 `requirements.lock`을 두 기기에서 공통 사용한다.
 - 2026-09-03 실제 `005930`, 분석일 `2026-09-02`, `--enhanced` 실행 완료: 12개 Agent, 최종 Hold, 14개 비어 있지 않은 보고서 파일 생성.

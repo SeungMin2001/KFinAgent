@@ -99,12 +99,28 @@ def test_kis_verification_uses_live_provider_and_propagates_failure(monkeypatch)
         called.append((args, kwargs))
         raise RuntimeError("KIS authentication failed")
 
-    monkeypatch.setattr(korea, "build_verified_market_snapshot", unavailable)
+    monkeypatch.setattr(korea, "build_verified_market_snapshot_with_bars", unavailable)
 
     with pytest.raises(RuntimeError, match="KIS authentication failed"):
         korea.verify_kis_data_access("005930", "2026-09-02")
 
     assert called
+
+
+def test_kis_reuses_unexpired_disk_cached_token(tmp_path, monkeypatch):
+    monkeypatch.setenv("KIS_TOKEN_CACHE_PATH", str(tmp_path / "kis-token.json"))
+    settings = KisSettings("key", "secret", base_url="https://example.test")
+    first_session = FakeSession()
+    first_session.post = lambda *_args, **_kwargs: FakeResponse(
+        {"access_token": "cached-token", "access_token_token_expired": "2099-01-01 00:00:00"}
+    )
+    first = KisClient(settings, session=first_session, cache_tokens=True)
+    assert first._token() == "cached-token"
+
+    second_session = FakeSession()
+    second = KisClient(settings, session=second_session, cache_tokens=True)
+    assert second._token() == "cached-token"
+    assert second_session.posts == []
 
 
 def test_propagator_keeps_the_preverified_snapshot_in_agent_state():

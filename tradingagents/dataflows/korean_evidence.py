@@ -42,7 +42,7 @@ def evidence_sections(snapshot: str) -> dict[str, str]:
 def evidence_for_domain(snapshot: str, domain: str) -> str:
     """Return only the verified snapshot sections assigned to ``domain``."""
     selectors = {
-        "market": ("Verified market data snapshot",),
+        "market": ("Verified market data snapshot", "Deterministic chart summary"),
         "disclosure": ("OpenDART disclosures",),
         "macro": ("US macro snapshot", "FRED:", "Bank of Korea ECOS macro snapshot"),
         "flow": ("KIS investor flow snapshot",),
