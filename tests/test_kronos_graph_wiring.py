@@ -24,6 +24,11 @@ def test_kronos_evidence_node_starts_and_is_a_market_barrier():
 
     assert ("__start__", "Time-Series Forecast Evidence Analyst") in workflow.edges
     assert (
-        "Time-Series Forecast Evidence Analyst",
+        (
+            "Disclosure Evidence Analyst",
+            "Macro Evidence Analyst",
+            "Flow Evidence Analyst",
+            "Time-Series Forecast Evidence Analyst",
+        ),
         "Market Analyst",
-    ) in workflow.edges
+    ) in workflow.waiting_edges
