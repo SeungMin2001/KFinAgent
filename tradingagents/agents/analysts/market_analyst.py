@@ -14,6 +14,7 @@ def create_market_analyst(
     llm,
     preload_verified_snapshot: bool = False,
     use_korean_evidence_reports: bool = False,
+    use_kronos_evidence_report: bool = False,
 ):
 
     def market_analyst_node(state):
@@ -102,6 +103,8 @@ Write a very detailed and nuanced report of the trends you observe. Provide spec
                 "Macro Evidence Analyst": state.get("macro_report", ""),
                 "Flow Evidence Analyst": state.get("flow_report", ""),
             }
+            if use_kronos_evidence_report:
+                required["Time-Series Forecast Evidence Analyst"] = state.get("kronos_report", "")
             missing = [name for name, report in required.items() if not report]
             if missing:
                 raise RuntimeError(
@@ -111,7 +114,8 @@ Write a very detailed and nuanced report of the trends you observe. Provide spec
                 f"## {name} report\n{report}" for name, report in required.items()
             )
             system_message += (
-                "\nThree source-bounded Evidence Analysts have normalized disclosures, macro, and flows below. "
+                "\nSource-bounded Evidence Analysts have normalized disclosures, macro, flows, and any configured "
+                "time-series model output below. "
                 "Treat their reports as inputs, not final opinions. Reconcile them with verified price/technical "
                 "evidence, preserve conflicts, and do not silently replace their dates, units, sources, missing-data "
                 "flags, or limitations.\n" + evidence_reports

@@ -31,17 +31,14 @@ API 키·토큰·개인정보는 절대 기록하지 않는다.
 - Kronos 클라이언트의 `disabled`/`local`/`remote` 모드, 원격 HTTPS 강제, API 키·입력 기준일·응답 계약 검증
 - `--enhanced` 모드에서 위 근거를 하나의 source-attributed snapshot으로 수집
 - `--enhanced`에서 Disclosure/Macro/Flow Evidence Analyst가 병렬로 각자 배정된 snapshot 구간만 구조화함
-- 세 Evidence Agent는 매매 의견을 내지 않고 수치·기간·출처·결측·한계를 전달함
-- Market Agent는 KIS 가격·기술지표와 세 Evidence report를 받아 충돌을 종합함
+- `--enhanced --kronos-mode remote`는 사전 검증에 사용한 동일 KIS 캔들을 중복 조회 없이 Kronos에 보내고, Time-Series Forecast Evidence Analyst를 병렬 추가함
+- 네 Evidence Agent는 매매 의견을 내지 않고 수치·기간·출처·결측·한계를 전달함
+- Market Agent는 KIS 가격·기술지표와 네 Evidence report를 받아 충돌을 종합함
 - 실행 중 진행 단계 출력, `--verbose`일 때 각 Agent 출력 표시
 - 완료된 리포트마다 `0_evidence.md` 생성
 
 ### 아직 미완성인 것
 
-- Kronos RunPod GPU 배포 및 실제 `KRONOS_API_URL` 연결
-- `--kronos-mode {disabled,local,remote}` CLI와 KIS 캔들 재사용 경로
-- Kronos 예측을 enhanced snapshot에 결합
-- Forecast Evidence Agent를 추가하고 Market Agent에 구조화 결과 전달
 - 공시 유형별 구조화 API를 추가 활용해 원문 자유 텍스트 추출 결과와 교차검증
 - 워크포워드 백테스트와 Kronos 기여도 평가
 - GitHub 공개용 정리·CI·배포 자동화
@@ -52,7 +49,7 @@ API 키·토큰·개인정보는 절대 기록하지 않는다.
 
 ```bash
 bash scripts/bootstrap_local_env.sh
-~/.virtualenvs/stock-<Mac-name>-py312/bin/python scripts/korean_stock_research.py 005930 --date 2026-09-02 --enhanced --verbose
+~/.virtualenvs/stock-<Mac-name>-py312/bin/python scripts/korean_stock_research.py 005930 --date 2026-09-02 --enhanced --kronos-mode remote --verbose
 ```
 
 - `005930`: KRX 6자리 종목코드
@@ -64,6 +61,7 @@ bash scripts/bootstrap_local_env.sh
 - `0_evidence.md`: 모든 원천 근거와 Agent 전달 경로
 - `1_analysts/market.md`: 통합 시장 분석
 - `1_analysts/disclosure.md`, `macro.md`, `flow.md`: 출처별 객관적 Evidence report
+- `1_analysts/kronos.md`: 모델 입력 캔들 요약·예측 범위·불확실성을 분리한 시계열 Evidence report
 - `2_research/`: Bull/Bear/Manager 토론
 - `3_trading/`, `4_risk/`, `5_portfolio/`: 최종 판단 과정
 - `complete_report.md`: 통합 리포트
@@ -107,13 +105,9 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 
 ## 다음 작업 우선순위
 
-1. `--kronos-mode {disabled,local,remote}` CLI를 추가하고 사전 검증에서 받은 KIS 캔들을 중복 조회 없이 Kronos 입력으로 재사용한다.
-2. Kronos 예측을 source-attributed snapshot에 결합한다.
-3. Forecast Evidence Agent를 독립 노드로 추가하고 Market Agent에 전달한다.
-4. Docker 이미지 빌드와 컨테이너 내부 계약 테스트를 검증한다.
-5. GitHub Actions/GHCR 공개 경로를 만들고 RunPod GPU Pod에 배포한다.
-6. 실제 `Kronos-base` 예측과 STOCK 연결을 검증한다.
-7. Kronos 포함/미포함 및 단순 기준선 대비 워크포워드 평가를 만든다.
+1. Kronos 포함/미포함 및 단순 기준선 대비 워크포워드 평가를 만든다.
+2. 공시 유형별 구조화 API를 추가 활용해 원문 자유 텍스트 추출 결과와 교차검증한다.
+3. GitHub 공개용 사용 예시·아키텍처 다이어그램·CI를 정리한다.
 
 ## 주의할 버그/교훈
 
@@ -126,4 +120,5 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 - iCloud 안의 `.venv`를 두 기기가 공유하면 절대경로가 깨진다. `bootstrap_local_env.sh`로 기기별 환경을 `~/.virtualenvs/` 아래 생성한다.
 - Python 3.12와 `requirements.lock`을 두 기기에서 공통 사용한다.
 - 2026-09-03 실제 `005930`, 분석일 `2026-09-02`, `--enhanced` 실행 완료: 12개 Agent, 최종 Hold, 14개 비어 있지 않은 보고서 파일 생성.
-- Kronos API 계약 테스트 3개와 클라이언트 모드/응답 검증 테스트 5개가 통과했다. 아직 실제 모델 다운로드·GPU 추론·RunPod 연결은 하지 않았다.
+- 2026-09-03 RunPod RTX 4090 GPU에서 공개 GHCR 이미지 `ghcr.io/seungmin2001/korean-stock/kronos-api:kronos-v0.1.0` 실행 성공. `/healthz` 확인 후 실제 KIS 244개 일봉을 전송해 `Kronos-base` GPU 예측 JSON 수신·계약 검증 성공.
+- Kronos는 OHLCV만 입력받는다. 따라서 공시·매크로·수급이 Kronos 예측의 원인이라고 주장하지 않는다. `kronos.md`에는 모델이 받은 캔들의 관측 요약과 모델 출력·불확실성만 기록하고, 다른 근거와의 대조는 Market Agent가 수행한다.

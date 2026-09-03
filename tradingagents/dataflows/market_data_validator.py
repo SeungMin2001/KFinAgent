@@ -90,6 +90,23 @@ def build_verified_market_snapshot(
     indicators: Iterable[str] | None = None,
 ) -> str:
     """Render a ground-truth snapshot: latest OHLCV row, indicators, recent closes."""
+    snapshot, _ = build_verified_market_snapshot_with_bars(
+        symbol, curr_date, look_back_days=look_back_days, indicators=indicators
+    )
+    return snapshot
+
+
+def build_verified_market_snapshot_with_bars(
+    symbol: str,
+    curr_date: str,
+    look_back_days: int = 30,
+    indicators: Iterable[str] | None = None,
+) -> tuple[str, pd.DataFrame]:
+    """Render a verified snapshot and return the exact normalized bars used.
+
+    Consumers such as a forecasting service must reuse these bars rather than
+    issuing a second market-data request with a potentially different cutoff.
+    """
     # `df` keeps the original capitalized OHLCV columns (Open/High/Low/Close/
     # Volume); stockstats `wrap()` lowercases columns and adds indicator
     # columns, so read raw prices from `df` and indicators from `stock_df`.
@@ -145,4 +162,4 @@ def build_verified_market_snapshot(
         "percentage moves unless directly supported by tool output with concrete "
         "dates and prices.",
     ]
-    return "\n".join(lines)
+    return "\n".join(lines), df.copy()

@@ -30,15 +30,17 @@ load_dotenv(PROJECT_ROOT / ".env")
 from tradingagents.korea import (  # noqa: E402, I001
     create_korean_stock_graph,
     korean_stock_config,
-    verify_kis_data_access,
+    verify_kis_data_access_with_bars,
 )
 from tradingagents.dataflows.korean_evidence import enhanced_korean_evidence  # noqa: E402, I001
+from tradingagents.dataflows.kronos import KronosSettings  # noqa: E402, I001
 
 
 STAGE_LABELS = {
     "Disclosure Evidence Analyst": "공시 근거 정규화",
     "Macro Evidence Analyst": "거시 근거 정규화",
     "Flow Evidence Analyst": "수급 근거 정규화",
+    "Time-Series Forecast Evidence Analyst": "Kronos 시계열 예측 근거 정규화",
     "Market Analyst": "시장 종합 분석",
     "Bull Researcher": "상승 관점 토론",
     "Bear Researcher": "하락 관점 토론",
@@ -57,6 +59,7 @@ def stage_result(stage: str, result: dict[str, Any]) -> str:
         "Disclosure Evidence Analyst": "disclosure_report",
         "Macro Evidence Analyst": "macro_report",
         "Flow Evidence Analyst": "flow_report",
+        "Time-Series Forecast Evidence Analyst": "kronos_report",
         "Market Analyst": "market_report",
         "Research Manager": "investment_plan",
         "Trader": "trader_investment_plan",
@@ -96,7 +99,9 @@ def make_progress_printer(verbose: bool):
     return print_stage
 
 
-def write_evidence_manifest(report_path: Path, symbol: str, analysis_date: str, snapshot: str, enhanced: bool) -> Path:
+def write_evidence_manifest(
+    report_path: Path, symbol: str, analysis_date: str, snapshot: str, enhanced: bool, kronos_enabled: bool
+) -> Path:
     """Save every factual input supplied to the agent workflow beside its report."""
     source_list = ["KIS 일봉 OHLCV·기술지표"]
     if enhanced:
@@ -108,6 +113,8 @@ def write_evidence_manifest(report_path: Path, symbol: str, analysis_date: str, 
                 "KIS 투자자별 수급(외국인·기관계·투신·기금)",
             ]
         )
+    if kronos_enabled:
+        source_list.append("Kronos-base 시계열 예측(검증된 KIS 일봉 입력)")
     sources = "\n".join(f"- {item}" for item in source_list)
     text = f"""# Evidence Manifest — {symbol}
 
@@ -122,8 +129,9 @@ def write_evidence_manifest(report_path: Path, symbol: str, analysis_date: str, 
 ## Agent evidence path
 
 - In enhanced mode, Disclosure / Macro / Flow Evidence Analysts each receive only their assigned snapshot sections.
-- Their normalized reports are saved as `1_analysts/disclosure.md`, `macro.md`, and `flow.md`.
-- Market Agent receives verified price/technical data plus those three reports and produces `1_analysts/market.md`.
+- When Kronos is enabled, the Time-Series Forecast Evidence Analyst receives only the model-input and forecast section.
+- Their normalized reports are saved under `1_analysts/`.
+- Market Agent receives verified price/technical data plus all enabled evidence reports and produces `1_analysts/market.md`.
 - Bull / Bear / Research Manager / Trader / Risk / Portfolio Manager: receive the Market Agent report and debate outputs downstream.
 - No order or account API is used.
 
@@ -146,19 +154,44 @@ def main() -> None:
     parser.add_argument("--debug", action="store_true", help="Print LangGraph messages while running")
     parser.add_argument("--verbose", action="store_true", help="Print each agent's completed analysis and debate output")
     parser.add_argument("--enhanced", action="store_true", help="Require DART, FRED, ECOS, and KIS investor-flow evidence")
+    parser.add_argument(
+        "--kronos-mode",
+        choices=("disabled", "local", "remote"),
+        default=None,
+        help="Kronos mode. Defaults to KRONOS_MODE in .env; remote/local failures stop the run.",
+    )
+    parser.add_argument(
+        "--kronos-horizon",
+        type=int,
+        default=5,
+        help="Kronos forecast horizon in business-day timestamps (1-30, default: 5)",
+    )
     args = parser.parse_args()
 
     if not args.symbol.isdigit() or len(args.symbol) != 6:
         parser.error("symbol must be a six-digit KRX code, for example 005930")
 
-    overrides = {}
+    try:
+        kronos_mode = KronosSettings.from_env(args.kronos_mode).mode
+    except Exception as exc:  # noqa: BLE001 - explicit configuration must fail before market collection
+        parser.exit(2, f"Kronos configuration failed; analysis was not started: {exc}\n")
+    if kronos_mode != "disabled" and not args.enhanced:
+        parser.error("Kronos evidence requires --enhanced so its output is normalized before debate.")
+    if not 1 <= args.kronos_horizon <= 30:
+        parser.error("--kronos-horizon must be between 1 and 30")
+
+    overrides = {
+        "kronos_mode": kronos_mode,
+        "kronos_horizon": args.kronos_horizon,
+        "enable_kronos_evidence_agent": kronos_mode != "disabled",
+    }
     if args.model:
         overrides.update({"deep_think_llm": args.model, "quick_think_llm": args.model})
 
     try:
         # Do this before constructing/running the agent workflow.  There is no
         # fixture, cached quote, or secondary provider on this path.
-        snapshot = verify_kis_data_access(args.symbol, args.date, overrides)
+        snapshot, market_bars = verify_kis_data_access_with_bars(args.symbol, args.date, overrides)
     except Exception as exc:  # noqa: BLE001 - show the live KIS failure clearly to CLI users
         parser.exit(2, f"KIS live data verification failed; analysis was not started: {exc}\n")
 
@@ -173,10 +206,13 @@ def main() -> None:
                 args.date,
                 snapshot,
                 config=korean_stock_config(overrides),
+                market_bars=market_bars,
             )
         except Exception as exc:  # noqa: BLE001 - enhanced mode is deliberately strict
             parser.exit(2, f"Enhanced evidence collection failed; analysis was not started: {exc}\n")
         print("[진행] DART·미국/한국 매크로·KIS 수급 검증 완료", flush=True)
+        if kronos_mode != "disabled":
+            print("[진행] Kronos 예측 수신 및 시계열 근거 검증 완료", flush=True)
 
     graph = create_korean_stock_graph(
         {**overrides, "enable_korean_evidence_agents": args.enhanced},
@@ -189,7 +225,9 @@ def main() -> None:
         verified_market_snapshot=snapshot,
     )
     path = graph.save_reports(state, args.symbol)
-    evidence_path = write_evidence_manifest(path, args.symbol, args.date, snapshot, args.enhanced)
+    evidence_path = write_evidence_manifest(
+        path, args.symbol, args.date, snapshot, args.enhanced, kronos_mode != "disabled"
+    )
 
     print(f"Final signal: {signal}")
     print(f"Report written to: {path}")

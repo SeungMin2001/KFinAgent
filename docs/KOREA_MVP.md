@@ -14,6 +14,10 @@ account tools.
 - The base mode enables only the Market Analyst. `--enhanced` inserts three
   source-bounded Evidence Analysts for OpenDART disclosures, FRED/ECOS macro,
   and KIS investor flow before the Market Analyst.
+- `--enhanced --kronos-mode remote` additionally sends the exact verified KIS
+  candle set to the configured Kronos API, then adds a separate time-series
+  evidence report. It never attributes a forecast to disclosures or macro data
+  that Kronos did not receive as model input.
 - Disables yfinance-based company-identity lookup and reflection memory, so the
   workflow's market data stays KIS-only.
 
@@ -39,7 +43,7 @@ credentials must have access to domestic-stock quotation APIs.
 ## Run
 
 ```bash
-~/.virtualenvs/stock-<Mac-name>-py312/bin/python scripts/korean_stock_research.py 005930 --date 2026-09-02 --enhanced
+~/.virtualenvs/stock-<Mac-name>-py312/bin/python scripts/korean_stock_research.py 005930 --date 2026-09-02 --enhanced --kronos-mode remote
 ```
 
 The output is a research rating such as `Buy`, `Hold`, or `Sell`, plus a
@@ -62,20 +66,23 @@ Every completed research run writes `0_evidence.md` beside `complete_report.md`.
 It records the immutable source-attributed snapshot collected before LLM work.
 In enhanced mode each Evidence Analyst receives only its assigned source
 sections; the Market Analyst receives verified prices/indicators plus their
-normalized reports. These reports are saved as `disclosure.md`, `macro.md`,
-and `flow.md` under `1_analysts/`.
+normalized reports. When Kronos is enabled, its model-input context and
+probabilistic output are normalized separately in `kronos.md`; this is not a
+causal explanation or investment recommendation. These reports are saved under
+`1_analysts/`.
 
 Those tests are only unit tests. The executable does not use their fake
 responses: it first fetches a real KIS market-data snapshot and exits before
 the agent starts if KIS authentication, network access, or market data fails.
 
-## Next: disclosure depth and Kronos
+## Kronos connection
 
 The enhanced workflow is being added with three additional credential scopes:
 `DART_API_KEY` for official filings, `ECOS_API_KEY` for Bank of Korea macro
 statistics, and `KRONOS_API_URL` / `KRONOS_API_KEY` for the separately hosted
-Kronos GPU service. See [Kronos on RunPod](KRONOS_RUNPOD.md) before configuring
-the model service.
+Kronos GPU service. Use `KRONOS_MODE=remote` and an HTTPS URL ending in
+`/v1/forecast`. The service is strict: if it is selected and unavailable, the
+research run stops rather than omitting the forecast. See [Kronos on RunPod](KRONOS_RUNPOD.md).
 
 ## Known limits
 
@@ -91,5 +98,5 @@ the model service.
 - ECOS observations are bounded by the analysis date, but ECOS does not expose
   historical data vintages. Revised values can therefore still leak into a
   strict historical backtest unless daily source snapshots are archived.
-- This is not a backtest or a trading system. A future phase will connect
-  Kronos as a separate forecast tool, then evaluate its signal out of sample.
+- This is not a backtest or a trading system. Kronos is a separate forecast
+  input; its incremental value must still be evaluated out of sample.

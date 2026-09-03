@@ -9,6 +9,7 @@ import pandas as pd
 from .dart import disclosure_context
 from .ecos import korea_macro_context
 from .kis import KisInvestorFlowTimeWindowError, get_kis_investor_flow
+from .kronos import forecast_kronos
 from .us_macro import us_macro_context
 
 _FLOW_FIELDS = {
@@ -45,6 +46,7 @@ def evidence_for_domain(snapshot: str, domain: str) -> str:
         "disclosure": ("OpenDART disclosures",),
         "macro": ("US macro snapshot", "FRED:", "Bank of Korea ECOS macro snapshot"),
         "flow": ("KIS investor flow snapshot",),
+        "kronos": ("Kronos forecast snapshot",),
     }
     if domain not in selectors:
         raise ValueError(f"unknown Korean evidence domain: {domain}")
@@ -129,17 +131,102 @@ def investor_flow_context(
     return "\n".join(lines)
 
 
+def kronos_forecast_context(
+    symbol: str,
+    market_bars: pd.DataFrame,
+    *,
+    horizon: int = 5,
+    mode: str | None = None,
+) -> str:
+    """Render one source-attributed forecast from the configured Kronos API.
+
+    ``market_bars`` must be the exact KIS rows used for the verified market
+    snapshot. No second KIS request or synthetic candle is allowed here.
+    """
+    required = {"Date", "Open", "High", "Low", "Close", "Volume", "Amount"}
+    missing = sorted(required - set(market_bars.columns))
+    if missing:
+        raise RuntimeError("Verified KIS bars are missing required Kronos fields: " + ", ".join(missing))
+    bars = market_bars.rename(
+        columns={
+            "Date": "date", "Open": "open", "High": "high", "Low": "low",
+            "Close": "close", "Volume": "volume", "Amount": "amount",
+        }
+    ).set_index("date")
+    result = forecast_kronos(symbol, bars, horizon=horizon, mode=mode)
+    close = pd.to_numeric(bars["close"], errors="raise")
+    volume = pd.to_numeric(bars["volume"], errors="raise")
+
+    def trailing_return(days: int) -> float | None:
+        if len(close) <= days:
+            return None
+        return float((close.iloc[-1] / close.iloc[-days - 1] - 1) * 100)
+
+    def fmt_percent(value: float | None) -> str:
+        return "not available" if value is None else f"{value:.4f}%"
+
+    volatility_20 = close.pct_change().tail(20).std(ddof=1)
+    volume_ratio = volume.tail(5).mean() / volume.tail(20).mean() if len(volume) >= 20 and volume.tail(20).mean() else None
+    lines = [
+        "## Kronos forecast snapshot (model output)",
+        "",
+        f"- Source model: {result['model_id']}",
+        f"- Generated at: {result['generated_at']}",
+        f"- Input symbol: {result['symbol']}",
+        f"- Input end date: {result['input_end_date']}",
+        f"- Verified KIS daily bars supplied: {len(bars.tail(512))}",
+        f"- Forecast horizon: {horizon} business-day timestamps",
+        f"- Last observed close: {result['last_close']:,.2f}",
+        "",
+        "### Observable conditions in the candle input (not model causal attribution)",
+        "",
+        f"- Trailing 5-trading-day close return: {fmt_percent(trailing_return(5))}",
+        f"- Trailing 20-trading-day close return: {fmt_percent(trailing_return(20))}",
+        f"- Trailing 60-trading-day close return: {fmt_percent(trailing_return(60))}",
+        f"- Last-20 daily-return standard deviation: {fmt_percent(float(volatility_20 * 100) if pd.notna(volatility_20) else None)}",
+        f"- Recent-volume ratio (5-day mean / 20-day mean): "
+        f"{'not available' if volume_ratio is None else f'{volume_ratio:.4f}x'}",
+        "- These are deterministic summaries of the candles sent to Kronos. They are not attention weights, "
+        "feature importance, or a causal explanation of the model output.",
+        "",
+        "### Kronos forecast output",
+        "",
+        f"- Median-path expected return: {result['expected_return_pct']:.4f}%",
+        f"- Sample upside frequency: {result['upside_probability']:.4f}",
+        f"- Final-return range (p10 / p50 / p90): {result['return_p10_pct']:.4f}% / "
+        f"{result['return_p50_pct']:.4f}% / {result['return_p90_pct']:.4f}%",
+        f"- Cross-sample uncertainty (standard deviation): {result['uncertainty_pct']:.4f}%",
+        "",
+        "### Median forecast path",
+        "",
+        "| Timestamp | Open | High | Low | Close | Volume |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for row in result["median_path"]:
+        lines.append(
+            f"| {row['timestamp']} | {row['open']:.2f} | {row['high']:.2f} | "
+            f"{row['low']:.2f} | {row['close']:.2f} | {row['volume']:.0f} |"
+        )
+    lines += [
+        "",
+        "Limitations: This is a probabilistic model output, not a calibrated probability, investment "
+        "recommendation, target price, or causal explanation. It has not yet been walk-forward validated "
+        "for this Korean-market workflow. Reconcile it with observed KIS, DART, macro, and flow evidence.",
+    ]
+    return "\n".join(lines)
+
+
 def enhanced_korean_evidence(
     symbol: str,
     as_of: str,
     market_snapshot: str,
     *,
     config: dict | None = None,
+    market_bars: pd.DataFrame | None = None,
 ) -> str:
     """Strictly build the full source-attributed input used by enhanced research."""
     settings = config or {}
-    return "\n\n".join(
-        [
+    sections = [
             market_snapshot,
             disclosure_context(
                 symbol,
@@ -162,4 +249,16 @@ def enhanced_korean_evidence(
                 long_window=int(settings.get("korean_flow_long_window", 20)),
             ),
         ]
-    )
+    kronos_mode = str(settings.get("kronos_mode", "disabled"))
+    if kronos_mode != "disabled":
+        if market_bars is None:
+            raise RuntimeError("Kronos evidence requires the verified KIS bars from preflight")
+        sections.append(
+            kronos_forecast_context(
+                symbol,
+                market_bars,
+                horizon=int(settings.get("kronos_horizon", 5)),
+                mode=kronos_mode,
+            )
+        )
+    return "\n\n".join(sections)

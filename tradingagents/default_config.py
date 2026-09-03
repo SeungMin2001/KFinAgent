@@ -126,6 +126,9 @@ DEFAULT_CONFIG = _apply_env_overrides({
     # Korean enhanced mode inserts source-bounded Disclosure/Macro/Flow
     # evidence analysts before the Market Analyst.
     "enable_korean_evidence_agents": False,
+    "enable_kronos_evidence_agent": False,
+    "kronos_mode": "disabled",
+    "kronos_horizon": 5,
     # Korean research evidence policy. These are explicit configuration rather
     # than hidden data-window constants so two machines/runs can be compared.
     "korean_market_lookback_days": 30,

@@ -74,6 +74,13 @@ _DOMAIN_INSTRUCTIONS = {
         "Report investor-group cumulative net flow, window, and streak exactly as supplied. Identify agreement "
         "or divergence across foreign, institutional, investment-trust, and fund flows. Flow alone is not a price forecast.",
     ),
+    "kronos": (
+        "Time-Series Forecast Evidence Analyst",
+        "kronos_report",
+        "Report the supplied model ID, input end date, horizon, median expected return, sample upside "
+        "frequency, p10/p50/p90 range, and uncertainty exactly as supplied. A model output is not a calibrated "
+        "probability or a recommendation. Preserve its limitations and identify disagreement with observed evidence.",
+    ),
 }
 
 
@@ -199,3 +206,7 @@ def create_macro_evidence_analyst(llm):
 
 def create_flow_evidence_analyst(llm):
     return _create_evidence_analyst(llm, "flow")
+
+
+def create_kronos_evidence_analyst(llm):
+    return _create_evidence_analyst(llm, "kronos")

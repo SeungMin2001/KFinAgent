@@ -153,6 +153,9 @@ class TradingAgentsGraph:
             enable_korean_evidence_agents=bool(
                 self.config.get("enable_korean_evidence_agents", False)
             ),
+            enable_kronos_evidence_agent=bool(
+                self.config.get("enable_kronos_evidence_agent", False)
+            ),
             korean_disclosure_chunk_chars=int(
                 self.config.get("korean_disclosure_chunk_chars", 60_000)
             ),

@@ -14,6 +14,7 @@ from tradingagents.agents import (
     create_conservative_debator,
     create_disclosure_evidence_analyst,
     create_flow_evidence_analyst,
+    create_kronos_evidence_analyst,
     create_fundamentals_analyst,
     create_macro_evidence_analyst,
     create_market_analyst,
@@ -59,6 +60,7 @@ class GraphSetup:
         preload_verified_snapshot: bool = False,
         progress_callback: Callable[[str, str, dict | None], None] | None = None,
         enable_korean_evidence_agents: bool = False,
+        enable_kronos_evidence_agent: bool = False,
         korean_disclosure_chunk_chars: int = 60_000,
     ):
         """Initialize with required components."""
@@ -69,6 +71,7 @@ class GraphSetup:
         self.preload_verified_snapshot = preload_verified_snapshot
         self.progress_callback = progress_callback
         self.enable_korean_evidence_agents = enable_korean_evidence_agents
+        self.enable_kronos_evidence_agent = enable_kronos_evidence_agent
         self.korean_disclosure_chunk_chars = korean_disclosure_chunk_chars
 
     def _with_progress(self, stage: str, node):
@@ -104,6 +107,7 @@ class GraphSetup:
                 self.quick_thinking_llm,
                 preload_verified_snapshot=self.preload_verified_snapshot,
                 use_korean_evidence_reports=self.enable_korean_evidence_agents,
+                use_kronos_evidence_report=self.enable_kronos_evidence_agent,
             ),
             "social": lambda: create_sentiment_analyst(self.quick_thinking_llm),
             "news": lambda: create_news_analyst(self.quick_thinking_llm),
@@ -150,6 +154,14 @@ class GraphSetup:
                     create_flow_evidence_analyst(self.quick_thinking_llm),
                 ),
             )
+            if self.enable_kronos_evidence_agent:
+                workflow.add_node(
+                    "Time-Series Forecast Evidence Analyst",
+                    self._with_progress(
+                        "Time-Series Forecast Evidence Analyst",
+                        create_kronos_evidence_analyst(self.quick_thinking_llm),
+                    ),
+                )
 
         # Add analyst nodes to the graph
         for spec in plan.specs:
@@ -179,14 +191,14 @@ class GraphSetup:
             # The three nodes write distinct state fields, so they can execute
             # concurrently. This list edge is a barrier: Market starts only
             # after all three source-bounded reports are available.
-            workflow.add_edge(
-                [
-                    "Disclosure Evidence Analyst",
-                    "Macro Evidence Analyst",
-                    "Flow Evidence Analyst",
-                ],
-                plan.specs[0].agent_node,
-            )
+            evidence_nodes = [
+                "Disclosure Evidence Analyst",
+                "Macro Evidence Analyst",
+                "Flow Evidence Analyst",
+            ]
+            if self.enable_kronos_evidence_agent:
+                evidence_nodes.append("Time-Series Forecast Evidence Analyst")
+            workflow.add_edge(evidence_nodes, plan.specs[0].agent_node)
         else:
             workflow.add_edge(START, plan.specs[0].agent_node)
 

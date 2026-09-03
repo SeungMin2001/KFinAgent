@@ -2,6 +2,7 @@ from .analysts.fundamentals_analyst import create_fundamentals_analyst
 from .analysts.korean_evidence_analysts import (
     create_disclosure_evidence_analyst,
     create_flow_evidence_analyst,
+    create_kronos_evidence_analyst,
     create_macro_evidence_analyst,
 )
 from .analysts.market_analyst import create_market_analyst
@@ -34,6 +35,7 @@ __all__ = [
     "create_disclosure_evidence_analyst",
     "create_macro_evidence_analyst",
     "create_flow_evidence_analyst",
+    "create_kronos_evidence_analyst",
     "create_neutral_debator",
     "create_news_analyst",
     "create_aggressive_debator",

@@ -23,6 +23,7 @@ def write_report_tree(final_state: dict, ticker: str, save_path) -> Path:
         ("disclosure_report", "disclosure.md", "Disclosure Evidence Analyst"),
         ("macro_report", "macro.md", "Macro Evidence Analyst"),
         ("flow_report", "flow.md", "Flow Evidence Analyst"),
+        ("kronos_report", "kronos.md", "Time-Series Forecast Evidence Analyst"),
     )
     for field, filename, label in evidence_reports:
         if final_state.get(field):

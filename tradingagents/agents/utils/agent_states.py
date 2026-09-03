@@ -53,6 +53,7 @@ class AgentState(MessagesState):
     disclosure_report: Annotated[str, "Objective report from the Disclosure Evidence Analyst"]
     macro_report: Annotated[str, "Objective report from the Macro Evidence Analyst"]
     flow_report: Annotated[str, "Objective report from the Flow Evidence Analyst"]
+    kronos_report: Annotated[str, "Objective report from the Time-Series Forecast Evidence Analyst"]
 
     sender: Annotated[str, "Agent that sent this message"]
 

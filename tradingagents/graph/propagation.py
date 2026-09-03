@@ -42,6 +42,7 @@ class Propagator:
             "disclosure_report": "",
             "macro_report": "",
             "flow_report": "",
+            "kronos_report": "",
             "past_context": past_context,
             "investment_debate_state": InvestDebateState(
                 {

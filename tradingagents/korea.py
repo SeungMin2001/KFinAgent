@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from tradingagents.dataflows.config import set_config
-from tradingagents.dataflows.market_data_validator import build_verified_market_snapshot
+from tradingagents.dataflows.market_data_validator import build_verified_market_snapshot_with_bars
 from tradingagents.default_config import DEFAULT_CONFIG
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 
@@ -77,6 +77,16 @@ def verify_kis_data_access(
     snapshot that the market analyst receives.  Any authentication, network,
     rate-limit, invalid-symbol, or empty-data error is allowed to stop the run.
     """
+    snapshot, _ = verify_kis_data_access_with_bars(symbol, analysis_date, config_overrides)
+    return snapshot
+
+
+def verify_kis_data_access_with_bars(
+    symbol: str,
+    analysis_date: str,
+    config_overrides: dict[str, Any] | None = None,
+) -> tuple[str, Any]:
+    """Require live KIS data and return the exact bars behind the snapshot."""
     requested = date.fromisoformat(analysis_date)
     if requested > date.today():
         raise ValueError("analysis_date cannot be in the future.")
@@ -89,7 +99,7 @@ def verify_kis_data_access(
     # The snapshot downloads the required historical bars from KIS itself and
     # computes the deterministic indicator set. It is intentionally the sole
     # verification request: no cached or fixture data is accepted here.
-    return build_verified_market_snapshot(
+    return build_verified_market_snapshot_with_bars(
         symbol,
         analysis_date,
         look_back_days=int(config["korean_market_lookback_days"]),
