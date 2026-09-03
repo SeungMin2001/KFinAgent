@@ -96,19 +96,34 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
         upper += padding
         return [bottom - ((value - lower) / (upper - lower)) * (bottom - top) for value in values], lower, upper
 
-    history_y, price_low, price_high = scaled(closes, 58, 315)
     forecast_values = [value for _, value in forecasts]
-    forecast_y, _, _ = scaled(forecast_values or closes, 58, 315, price_low, price_high)
+    # Price observations and forecasts must use one shared scale.  Scaling the
+    # forecast independently makes a value's vertical position incomparable to
+    # the blue history, which is especially misleading on a short horizon.
+    terminal_range = []
+    if p10 is not None and p90 is not None:
+        terminal_range = [closes[-1] * (1 + p10 / 100), closes[-1] * (1 + p90 / 100)]
+    _, price_low, price_high = scaled(closes + forecast_values + terminal_range, 58, 315)
+
+    def price_y(value: float) -> float:
+        return 315 - ((value - price_low) / (price_high - price_low)) * (315 - 58)
+
+    history_y = [price_y(value) for value in closes]
+    forecast_y = [price_y(value) for value in forecast_values]
     volume_y, volume_low, volume_high = scaled(volumes, 375, 485, 0, max(volumes) if volumes else 1)
     rsi_values = [50.0 if pd.isna(value) else float(value) for value in rsis]
     rsi_y, _, _ = scaled(rsi_values, 535, 635, 0, 100)
 
-    history_points = " ".join(f"{x(i, len(closes)):.1f},{history_y[i]:.1f}" for i in range(len(closes)))
+    total_points = len(closes) + len(forecasts)
+    history_points = " ".join(f"{x(i, total_points):.1f},{history_y[i]:.1f}" for i in range(len(closes)))
     forecast_points = ""
     if forecasts:
+        # The first red point is the last observed close (the input cut-off),
+        # followed by predictions at future timestamps.  It makes the boundary
+        # and the model's actual forecast horizon visually unambiguous.
         forecast_points = " ".join(
-            f"{x(len(closes) - 1 + i, len(closes) - 1 + len(forecasts)):.1f},{forecast_y[i]:.1f}"
-            for i in range(len(forecasts))
+            [f"{x(len(closes) - 1, total_points):.1f},{history_y[-1]:.1f}"]
+            + [f"{x(len(closes) + i, total_points):.1f},{forecast_y[i]:.1f}" for i in range(len(forecasts))]
         )
     bar_width = max(2, plot_width / max(len(volumes), 1) * 0.65)
     volume_rects = "".join(
@@ -120,26 +135,36 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
     forecast_band = ""
     if forecasts and p10 is not None and p90 is not None:
         last_close = closes[-1]
-        final_x = x(len(closes) - 1 + len(forecasts) - 1, len(closes) - 1 + len(forecasts))
+        final_x = x(total_points - 1, total_points)
         band_values = [last_close * (1 + p10 / 100), last_close * (1 + p90 / 100)]
-        band_y, _, _ = scaled(band_values, 58, 315, price_low, price_high)
+        band_y = [price_y(value) for value in band_values]
         forecast_band = (
             f'<line x1="{final_x:.1f}" y1="{band_y[0]:.1f}" x2="{final_x:.1f}" y2="{band_y[1]:.1f}" '
             'stroke="#c0504d" stroke-width="6" opacity="0.45"/>'
             f'<text x="{final_x - 6:.1f}" y="{band_y[0] - 8:.1f}" text-anchor="end" class="label">p10–p90</text>'
         )
+    date_label_items = [(0, dates.iloc[0]), (len(closes) // 2, dates.iloc[len(closes) // 2]), (len(closes) - 1, dates.iloc[-1])]
+    if forecasts:
+        date_label_items.append((total_points - 1, forecasts[-1][0]))
     date_labels = "".join(
-        f'<text x="{x(i, len(dates)):.1f}" y="665" text-anchor="middle" class="label">{html.escape(dates.iloc[i].strftime("%m-%d"))}</text>'
-        for i in sorted({0, len(dates) // 2, len(dates) - 1})
+        f'<text x="{x(index, total_points):.1f}" y="665" text-anchor="middle" class="label">{html.escape(pd.Timestamp(date).strftime("%m-%d"))}</text>'
+        for index, date in date_label_items
     )
+    cutoff_x = x(len(closes) - 1, total_points)
+    cutoff_marker = ""
+    if forecasts:
+        cutoff_marker = (
+            f'<line x1="{cutoff_x:.1f}" y1="58" x2="{cutoff_x:.1f}" y2="315" class="cutoff"/>'
+            f'<text x="{cutoff_x - 4:.1f}" y="72" text-anchor="end" class="label">input ends {html.escape(dates.iloc[-1].strftime("%m-%d"))}</text>'
+        )
     target.write_text(
         f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="KIS price, volume, RSI, and Kronos forecast overview">
-<style>.title{{font:600 18px sans-serif;fill:#202124}}.label{{font:12px sans-serif;fill:#5f6368}}.axis{{stroke:#c8cdd3;stroke-width:1}}.hist{{fill:none;stroke:#1f4e79;stroke-width:2.5}}.forecast{{fill:none;stroke:#c0504d;stroke-width:2.5;stroke-dasharray:7 4}}.rsi{{fill:none;stroke:#8064a2;stroke-width:2}}</style>
+<style>.title{{font:600 18px sans-serif;fill:#202124}}.label{{font:12px sans-serif;fill:#5f6368}}.axis{{stroke:#c8cdd3;stroke-width:1}}.cutoff{{stroke:#7f7f7f;stroke-width:1.2;stroke-dasharray:3 3}}.hist{{fill:none;stroke:#1f4e79;stroke-width:2.5}}.forecast{{fill:none;stroke:#c0504d;stroke-width:2.5;stroke-dasharray:7 4}}.rsi{{fill:none;stroke:#8064a2;stroke-width:2}}</style>
 <text x="{left}" y="28" class="title">KIS market overview and Kronos forecast</text>
 <text x="{left}" y="48" class="label">Historical close (blue) · Kronos median path (red dashed) · final p10–p90 range (red band)</text>
 <line x1="{left}" y1="315" x2="{width-right}" y2="315" class="axis"/><line x1="{left}" y1="485" x2="{width-right}" y2="485" class="axis"/><line x1="{left}" y1="635" x2="{width-right}" y2="635" class="axis"/>
 <text x="14" y="190" class="label">Close</text><text x="14" y="435" class="label">Volume</text><text x="14" y="590" class="label">RSI (14)</text>
-<polyline points="{history_points}" class="hist"/>{forecast_band}<polyline points="{forecast_points}" class="forecast"/>
+<polyline points="{history_points}" class="hist"/>{cutoff_marker}{forecast_band}<polyline points="{forecast_points}" class="forecast"/>
 {volume_rects}<line x1="{left}" y1="565" x2="{width-right}" y2="565" class="axis"/><line x1="{left}" y1="605" x2="{width-right}" y2="605" class="axis"/>
 <text x="{width-right}" y="568" text-anchor="end" class="label">70</text><text x="{width-right}" y="608" text-anchor="end" class="label">30</text><polyline points="{rsi_points}" class="rsi"/>
 {date_labels}</svg>''',
