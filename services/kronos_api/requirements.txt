@@ -1,0 +1,8 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+numpy>=2.0.0
+pandas>=2.2.0
+torch>=2.4.0
+einops==0.8.1
+huggingface_hub==0.33.1
+safetensors==0.6.2
