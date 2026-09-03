@@ -188,6 +188,8 @@ class GraphSetup:
             workflow.add_edge(START, "Disclosure Evidence Analyst")
             workflow.add_edge(START, "Macro Evidence Analyst")
             workflow.add_edge(START, "Flow Evidence Analyst")
+            if self.enable_kronos_evidence_agent:
+                workflow.add_edge(START, "Time-Series Forecast Evidence Analyst")
             # The three nodes write distinct state fields, so they can execute
             # concurrently. This list edge is a barrier: Market starts only
             # after all three source-bounded reports are available.
