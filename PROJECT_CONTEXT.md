@@ -32,11 +32,12 @@ API 키·토큰·개인정보는 절대 기록하지 않는다.
 - `--enhanced` 모드에서 위 근거를 하나의 source-attributed snapshot으로 수집
 - `--enhanced`에서 Disclosure/Macro/Flow Evidence Analyst가 병렬로 각자 배정된 snapshot 구간만 구조화함
 - `--enhanced --kronos-mode remote`는 사전 검증에 사용한 동일 KIS 캔들을 중복 조회 없이 Kronos에 보내고, Time-Series Forecast Evidence Analyst를 병렬 추가함
+- Kronos 일봉 기본 프로토콜은 논문과 맞춤: 과거 40개 OHLCVA → 미래 12개 일봉, T=0.6, top-p=0.9, 10개 경로
 - 네 Evidence Agent는 매매 의견을 내지 않고 수치·기간·출처·결측·한계를 전달함
 - Market Agent는 KIS 가격·기술지표와 네 Evidence report를 받아 충돌을 종합함
 - 실행 중 진행 단계 출력, `--verbose`일 때 각 Agent 출력 표시
 - 완료된 리포트마다 `0_evidence.md` 생성
-- 보고서에 검증된 KIS 캔들·거래량·RSI·Kronos 중앙 예측 경로/최종 p10-p90 범위를 담은 `visuals/market_overview.svg` 생성
+- 보고서에 검증된 KIS 캔들·거래량·Kronos 중앙 예측 경로/최종 p10-p90 범위를 담은 `visuals/market_overview.svg` 생성
 - 차트와 동일한 원천 캔들의 결정론적 요약을 Market Agent에 텍스트로 제공한다. 현재 Agent는 이미지 자체를 읽는 Vision 방식이 아니다.
 
 ### 아직 미완성인 것

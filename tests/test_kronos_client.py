@@ -8,17 +8,17 @@ from tradingagents.dataflows.kronos import KronosSettings, forecast_kronos
 
 
 def bars() -> pd.DataFrame:
-    index = pd.bdate_range("2026-01-01", periods=30)
+    index = pd.bdate_range("2026-01-01", periods=60)
     return pd.DataFrame(
         {
-            "open": [100.0] * 30, "high": [103.0] * 30, "low": [99.0] * 30,
-            "close": [101.0] * 30, "volume": [1_000.0] * 30, "amount": [101_000.0] * 30,
+            "open": [100.0] * 60, "high": [103.0] * 60, "low": [99.0] * 60,
+            "close": [101.0] * 60, "volume": [1_000.0] * 60, "amount": [101_000.0] * 60,
         },
         index=index,
     )
 
 
-def response_for(frame: pd.DataFrame, horizon: int = 5) -> dict:
+def response_for(frame: pd.DataFrame, horizon: int = 12) -> dict:
     return {
         "model_id": "NeoQuasar/Kronos-base", "symbol": "005930",
         "generated_at": "2026-02-12T12:00:00+09:00",
@@ -71,7 +71,12 @@ def test_client_sends_contract_and_validates_response(monkeypatch):
     result = forecast_kronos("005930", frame, mode="remote")
     assert result["model_id"] == "NeoQuasar/Kronos-base"
     assert calls[0][1]["headers"] == {"X-API-Key": "secret"}
-    assert len(calls[0][1]["json"]["bars"]) == 30
+    payload = calls[0][1]["json"]
+    assert len(payload["bars"]) == 40
+    assert len(payload["future_timestamps"]) == 12
+    assert payload["temperature"] == 0.6
+    assert payload["top_p"] == 0.9
+    assert payload["samples"] == 10
 
 
 def test_client_rejects_mismatched_input_date(monkeypatch):

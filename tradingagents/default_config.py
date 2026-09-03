@@ -128,7 +128,13 @@ DEFAULT_CONFIG = _apply_env_overrides({
     "enable_korean_evidence_agents": False,
     "enable_kronos_evidence_agent": False,
     "kronos_mode": "disabled",
-    "kronos_horizon": 5,
+    # Kronos paper daily forecasting protocol: 40 daily K-lines -> 12 future
+    # daily K-lines, with T=0.6, top-p=0.9, and 10 Monte-Carlo paths.
+    "kronos_lookback": 40,
+    "kronos_horizon": 12,
+    "kronos_temperature": 0.6,
+    "kronos_top_p": 0.9,
+    "kronos_samples": 10,
     # Korean research evidence policy. These are explicit configuration rather
     # than hidden data-window constants so two machines/runs can be compared.
     "korean_market_lookback_days": 30,

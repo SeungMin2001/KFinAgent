@@ -84,12 +84,20 @@ Kronos GPU service. Use `KRONOS_MODE=remote` and an HTTPS URL ending in
 `/v1/forecast`. The service is strict: if it is selected and unavailable, the
 research run stops rather than omitting the forecast. See [Kronos on RunPod](KRONOS_RUNPOD.md).
 
+The default daily protocol mirrors the paper's forecasting experiment: 40
+historical OHLCVA K-lines, 12 future K-lines, temperature 0.6, top-p 0.9, and
+10 sampled paths. It is a protocol match, not a claim that its Korean-market
+performance has been reproduced.
+
 ## Known limits
 
 - KIS daily quotations are fetched in 90-calendar-day windows because the
   official endpoint limits a response to roughly 100 observations.
 - Current functionality is daily-bar research only; intraday and live-streaming
   data are not part of this MVP.
+- Future Kronos timestamps currently use weekday business days. A KRX session
+  calendar is still required before treating a live forecast schedule as an
+  exact reproduction of the paper's known future K-line timestamps.
 - OpenDART original-document ZIP/XML files are downloaded for the ten selected
   filings. All extracted visible text is processed; large disclosure corpora
   are split into configurable 60,000-character chunks, normalized separately,

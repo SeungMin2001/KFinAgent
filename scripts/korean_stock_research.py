@@ -173,8 +173,14 @@ def main() -> None:
     parser.add_argument(
         "--kronos-horizon",
         type=int,
-        default=5,
-        help="Kronos forecast horizon in business-day timestamps (1-30, default: 5)",
+        default=12,
+        help="Kronos forecast horizon in business-day timestamps (1-30, default: 12; paper daily protocol)",
+    )
+    parser.add_argument(
+        "--kronos-lookback",
+        type=int,
+        default=40,
+        help="Historical daily K-lines sent to Kronos (30-512, default: 40; paper daily protocol)",
     )
     args = parser.parse_args()
 
@@ -189,10 +195,13 @@ def main() -> None:
         parser.error("Kronos evidence requires --enhanced so its output is normalized before debate.")
     if not 1 <= args.kronos_horizon <= 30:
         parser.error("--kronos-horizon must be between 1 and 30")
+    if not 30 <= args.kronos_lookback <= 512:
+        parser.error("--kronos-lookback must be between 30 and 512")
 
     overrides = {
         "kronos_mode": kronos_mode,
         "kronos_horizon": args.kronos_horizon,
+        "kronos_lookback": args.kronos_lookback,
         "enable_kronos_evidence_agent": kronos_mode != "disabled",
     }
     if args.model:

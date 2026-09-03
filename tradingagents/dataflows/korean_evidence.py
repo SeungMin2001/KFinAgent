@@ -9,7 +9,14 @@ import pandas as pd
 from .dart import disclosure_context
 from .ecos import korea_macro_context
 from .kis import KisInvestorFlowTimeWindowError, get_kis_investor_flow
-from .kronos import forecast_kronos
+from .kronos import (
+    PAPER_DAILY_HORIZON,
+    PAPER_DAILY_LOOKBACK,
+    PAPER_FORECAST_SAMPLES,
+    PAPER_FORECAST_TEMPERATURE,
+    PAPER_FORECAST_TOP_P,
+    forecast_kronos,
+)
 from .us_macro import us_macro_context
 
 _FLOW_FIELDS = {
@@ -135,8 +142,12 @@ def kronos_forecast_context(
     symbol: str,
     market_bars: pd.DataFrame,
     *,
-    horizon: int = 5,
+    horizon: int = PAPER_DAILY_HORIZON,
     mode: str | None = None,
+    lookback: int = PAPER_DAILY_LOOKBACK,
+    temperature: float = PAPER_FORECAST_TEMPERATURE,
+    top_p: float = PAPER_FORECAST_TOP_P,
+    samples: int = PAPER_FORECAST_SAMPLES,
 ) -> str:
     """Render one source-attributed forecast from the configured Kronos API.
 
@@ -153,9 +164,13 @@ def kronos_forecast_context(
             "Close": "close", "Volume": "volume", "Amount": "amount",
         }
     ).set_index("date")
-    result = forecast_kronos(symbol, bars, horizon=horizon, mode=mode)
-    close = pd.to_numeric(bars["close"], errors="raise")
-    volume = pd.to_numeric(bars["volume"], errors="raise")
+    history = bars.tail(lookback)
+    result = forecast_kronos(
+        symbol, bars, horizon=horizon, mode=mode, lookback=lookback,
+        temperature=temperature, top_p=top_p, samples=samples,
+    )
+    close = pd.to_numeric(history["close"], errors="raise")
+    volume = pd.to_numeric(history["volume"], errors="raise")
 
     def trailing_return(days: int) -> float | None:
         if len(close) <= days:
@@ -174,8 +189,9 @@ def kronos_forecast_context(
         f"- Generated at: {result['generated_at']}",
         f"- Input symbol: {result['symbol']}",
         f"- Input end date: {result['input_end_date']}",
-        f"- Verified KIS daily bars supplied: {len(bars.tail(512))}",
+        f"- Verified KIS daily bars supplied: {len(history)}",
         f"- Forecast horizon: {horizon} business-day timestamps",
+        f"- Inference sampling: temperature={temperature:.1f}, top_p={top_p:.1f}, paths={samples}",
         f"- Last observed close: {result['last_close']:,.2f}",
         "",
         "### Observable conditions in the candle input (not model causal attribution)",
@@ -257,8 +273,12 @@ def enhanced_korean_evidence(
             kronos_forecast_context(
                 symbol,
                 market_bars,
-                horizon=int(settings.get("kronos_horizon", 5)),
+                horizon=int(settings.get("kronos_horizon", PAPER_DAILY_HORIZON)),
                 mode=kronos_mode,
+                lookback=int(settings.get("kronos_lookback", PAPER_DAILY_LOOKBACK)),
+                temperature=float(settings.get("kronos_temperature", PAPER_FORECAST_TEMPERATURE)),
+                top_p=float(settings.get("kronos_top_p", PAPER_FORECAST_TOP_P)),
+                samples=int(settings.get("kronos_samples", PAPER_FORECAST_SAMPLES)),
             )
         )
     return "\n\n".join(sections)

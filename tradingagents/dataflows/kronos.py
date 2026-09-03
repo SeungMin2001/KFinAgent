@@ -15,6 +15,11 @@ import requests
 from .errors import VendorNotConfiguredError
 
 KronosMode = Literal["disabled", "local", "remote"]
+PAPER_DAILY_LOOKBACK = 40
+PAPER_DAILY_HORIZON = 12
+PAPER_FORECAST_TEMPERATURE = 0.6
+PAPER_FORECAST_TOP_P = 0.9
+PAPER_FORECAST_SAMPLES = 10
 _REQUIRED_RESPONSE_FIELDS = {
     "model_id", "symbol", "generated_at", "input_end_date", "last_close",
     "expected_return_pct", "upside_probability", "return_p10_pct",
@@ -85,20 +90,37 @@ def _validated_response(data: object, symbol: str, input_end_date: str, horizon:
 def forecast_kronos(
     symbol: str,
     bars: pd.DataFrame,
-    horizon: int = 5,
+    horizon: int = PAPER_DAILY_HORIZON,
     *,
     mode: str | None = None,
+    lookback: int = PAPER_DAILY_LOOKBACK,
+    temperature: float = PAPER_FORECAST_TEMPERATURE,
+    top_p: float = PAPER_FORECAST_TOP_P,
+    samples: int = PAPER_FORECAST_SAMPLES,
 ) -> dict:
+    """Run the paper's daily forecasting protocol unless explicitly overridden.
+
+    The paper's daily benchmark is 40 historical K-lines to 12 future K-lines,
+    using T=0.6, top-p=0.9, and ten Monte-Carlo inference trajectories.
+    """
     settings = KronosSettings.from_env(mode)
     if settings.mode == "disabled":
         raise VendorNotConfiguredError("Kronos is disabled. Select local or remote mode explicitly.")
     if horizon < 1 or horizon > 30:
         raise ValueError("Kronos horizon must be between 1 and 30 trading days.")
+    if lookback < 30 or lookback > 512:
+        raise ValueError("Kronos lookback must be between 30 and 512 daily bars.")
+    if not 0.1 <= temperature <= 2.0:
+        raise ValueError("Kronos temperature must be between 0.1 and 2.0.")
+    if not 0.1 <= top_p <= 1.0:
+        raise ValueError("Kronos top_p must be between 0.1 and 1.0.")
+    if not 1 <= samples <= 10:
+        raise ValueError("Kronos samples must be between 1 and 10.")
     required_columns = ["open", "high", "low", "close", "volume", "amount"]
     missing_columns = sorted(set(required_columns) - set(bars.columns))
     if missing_columns:
         raise ValueError(f"Kronos bars are missing columns: {', '.join(missing_columns)}")
-    history = bars.tail(512).copy()
+    history = bars.tail(lookback).copy()
     if len(history) < 30:
         raise ValueError("Kronos requires at least 30 historical OHLCV bars.")
     history.index = pd.to_datetime(history.index)
@@ -119,7 +141,9 @@ def forecast_kronos(
             for timestamp, row in history.iterrows()
         ],
         "future_timestamps": [timestamp.isoformat() for timestamp in future],
-        "samples": 3,
+        "samples": samples,
+        "temperature": temperature,
+        "top_p": top_p,
     }
     response = requests.post(
         settings.api_url,

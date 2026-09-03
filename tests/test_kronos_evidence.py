@@ -19,12 +19,16 @@ def _bars():
 
 
 def test_kronos_context_uses_verified_bars_and_preserves_limitations(monkeypatch):
-    def fake_forecast(symbol, bars, horizon, mode):
+    def fake_forecast(symbol, bars, horizon, mode, lookback, temperature, top_p, samples):
         assert symbol == "005930"
         assert len(bars) == 30
         assert list(bars.columns) == ["open", "high", "low", "close", "volume", "amount"]
         assert horizon == 2
         assert mode == "remote"
+        assert lookback == 30
+        assert temperature == 0.6
+        assert top_p == 0.9
+        assert samples == 10
         return {
             "model_id": "test-model",
             "symbol": symbol,
@@ -44,7 +48,7 @@ def test_kronos_context_uses_verified_bars_and_preserves_limitations(monkeypatch
         }
 
     monkeypatch.setattr("tradingagents.dataflows.korean_evidence.forecast_kronos", fake_forecast)
-    text = kronos_forecast_context("005930", _bars(), horizon=2, mode="remote")
+    text = kronos_forecast_context("005930", _bars(), horizon=2, lookback=30, mode="remote")
 
     assert "Verified KIS daily bars supplied: 30" in text
     assert "Observable conditions in the candle input" in text
