@@ -45,7 +45,7 @@ API 키·토큰·개인정보는 절대 기록하지 않는다.
 ### 아직 미완성인 것
 
 - 공시 유형별 구조화 API를 추가 활용해 원문 자유 텍스트 추출 결과와 교차검증
-- 워크포워드 백테스트와 Kronos 기여도 평가
+- 장기 반복 평가·엄밀한 point-in-time 검증·전향적 검증 (초기 과거 replay 엔진과 단월 파일럿은 완료)
 - GitHub 공개용 정리·CI·배포 자동화
 
 ## 실행 방법
@@ -117,6 +117,16 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 - Evidence Agent의 구조화 출력이 실패하면 자유 텍스트로 우회하지 않고 실행을 중단한다.
 
 ## 다음 작업 우선순위
+
+- 2026-09-04: `scripts/benchmark_korean_stock.py`, `tradingagents/benchmark.py`에 과거 순차 평가 구현 완료.
+  평가 종목은 사용자 지정 삼성전자(005930), SK하이닉스(000660)로 고정. LS ELECTRIC 포함 초기 실행은 예비이며 최종 비교에서 제외.
+  기본 비교군 Buy&Hold/SMA/MACD/RSI + 선택 Kronos/Agents/Agents+Kronos. t종가 판단→다음 실제 거래일 시가, 가상 계좌, 편도 비용 가정, 12거래일 판단.
+  `docs/BENCHMARK_PROTOCOL.md` 참조. 과거 ECOS 개정치·LLM 학습지식 등으로 탐색적 replay이며 엄밀한 OOS 성과로 주장하지 않는다.
+  계좌 주문 API는 호출하지 않는다. 완료된 종목별 실행은 `scripts/combine_benchmarks.py`로 NAV 합산 가능.
+  8월 파일럿 7전략/2종목/Agent 토론 8회 실실행 완료: 합산 Buy&Hold +3.29%, MACD +2.37%, Kronos +0.53%, Agents 및 Agents+Kronos 0%(모든 판단 Hold).
+  `docs/BENCHMARK_RESULTS.md`에 결과와 제한 기록. 대시보드는 `artifacts/benchmarks/samsung_hynix_202608_pilot/BENCHMARK.html`.
+  1년 기준선·비용 10/30/50bp·매일 판단 기준선 검증도 완료. 1년 Agent 전체 비교·반복은 아직 미실시.
+  전액 진입 매핑이 Hold를 강화할 수 있다는 관측이 있어, 공개 성능 주장 전 배분 정책·공개시점 검증 및 API 예산 확정 필요.
 
 1. Kronos 포함/미포함 및 단순 기준선 대비 워크포워드 평가를 만든다.
 2. 공시 유형별 구조화 API를 추가 활용해 원문 자유 텍스트 추출 결과와 교차검증한다.
