@@ -30,7 +30,9 @@ API 키·토큰·개인정보는 절대 기록하지 않는다.
 - Kronos API 서버 골격과 모델 지연 로딩, API 키 인증, health endpoint, 모델 없는 계약 테스트
 - Kronos 클라이언트의 `disabled`/`local`/`remote` 모드, 원격 HTTPS 강제, API 키·입력 기준일·응답 계약 검증
 - `--enhanced` 모드에서 위 근거를 하나의 source-attributed snapshot으로 수집
-- `--enhanced`에서 Disclosure/Macro/Flow Evidence Analyst가 병렬로 각자 배정된 snapshot 구간만 구조화함
+- `--enhanced`에서 한국형 역할이 각자 배정된 검증 snapshot 구간만 구조화함
+- 한국 특화 실행은 원본 TradingAgents의 `Market → Sentiment → News → Fundamentals` 분석 순서를 유지한다. 각 역할은 KIS 시장, KIS 수급, DART 공시, DART 기반 재무 근거로 대응하며, 이어서 Macro와 Kronos 근거를 추가한 뒤 원본 Bull/Bear·Manager·Trader·Risk·Portfolio 흐름으로 들어간다.
+- 모든 한국형 분석 보고서는 Bull/Bear 및 Research Manager에 직접 전달된다. Market Analyst의 요약만 통과하는 정보 병목은 사용하지 않는다.
 - `--enhanced --kronos-mode remote`는 사전 검증에 사용한 동일 KIS 캔들을 중복 조회 없이 Kronos에 보내고, Time-Series Forecast Evidence Analyst를 병렬 추가함
 - Kronos 일봉 기본 프로토콜은 논문과 맞춤: 과거 40개 OHLCVA → 미래 12개 일봉, T=0.6, top-p=0.9, 10개 경로
 - 네 Evidence Agent는 매매 의견을 내지 않고 수치·기간·출처·결측·한계를 전달함

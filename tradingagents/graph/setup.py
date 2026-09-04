@@ -15,6 +15,9 @@ from tradingagents.agents import (
     create_disclosure_evidence_analyst,
     create_flow_evidence_analyst,
     create_fundamentals_analyst,
+    create_korean_disclosure_event_analyst,
+    create_korean_flow_sentiment_analyst,
+    create_korean_fundamentals_analyst,
     create_kronos_evidence_analyst,
     create_macro_evidence_analyst,
     create_market_analyst,
@@ -62,6 +65,7 @@ class GraphSetup:
         enable_korean_evidence_agents: bool = False,
         enable_kronos_evidence_agent: bool = False,
         korean_disclosure_chunk_chars: int = 60_000,
+        korean_role_upgrade: bool = False,
     ):
         """Initialize with required components."""
         self.quick_thinking_llm = quick_thinking_llm
@@ -73,6 +77,7 @@ class GraphSetup:
         self.enable_korean_evidence_agents = enable_korean_evidence_agents
         self.enable_kronos_evidence_agent = enable_kronos_evidence_agent
         self.korean_disclosure_chunk_chars = korean_disclosure_chunk_chars
+        self.korean_role_upgrade = korean_role_upgrade
 
     def _with_progress(self, stage: str, node):
         """Emit a concise stage event immediately before a graph node runs."""
@@ -106,12 +111,23 @@ class GraphSetup:
             "market": lambda: create_market_analyst(
                 self.quick_thinking_llm,
                 preload_verified_snapshot=self.preload_verified_snapshot,
-                use_korean_evidence_reports=self.enable_korean_evidence_agents,
-                use_kronos_evidence_report=self.enable_kronos_evidence_agent,
+                use_korean_evidence_reports=(self.enable_korean_evidence_agents and not self.korean_role_upgrade),
+                use_kronos_evidence_report=(self.enable_kronos_evidence_agent and not self.korean_role_upgrade),
             ),
-            "social": lambda: create_sentiment_analyst(self.quick_thinking_llm),
-            "news": lambda: create_news_analyst(self.quick_thinking_llm),
-            "fundamentals": lambda: create_fundamentals_analyst(self.quick_thinking_llm),
+            "social": lambda: (
+                create_korean_flow_sentiment_analyst(self.quick_thinking_llm)
+                if self.korean_role_upgrade else create_sentiment_analyst(self.quick_thinking_llm)
+            ),
+            "news": lambda: (
+                create_korean_disclosure_event_analyst(
+                    self.quick_thinking_llm, max_chunk_chars=self.korean_disclosure_chunk_chars
+                ) if self.korean_role_upgrade else create_news_analyst(self.quick_thinking_llm)
+            ),
+            "fundamentals": lambda: (
+                create_korean_fundamentals_analyst(
+                    self.quick_thinking_llm, max_chunk_chars=self.korean_disclosure_chunk_chars
+                ) if self.korean_role_upgrade else create_fundamentals_analyst(self.quick_thinking_llm)
+            ),
         }
 
         # Create researcher and manager nodes
@@ -129,7 +145,7 @@ class GraphSetup:
         # Create workflow
         workflow = StateGraph(AgentState)
 
-        if self.enable_korean_evidence_agents:
+        if self.enable_korean_evidence_agents and not self.korean_role_upgrade:
             workflow.add_node(
                 "Disclosure Evidence Analyst",
                 self._with_progress(
@@ -184,7 +200,7 @@ class GraphSetup:
 
         # Define edges
         # Start with the first analyst
-        if self.enable_korean_evidence_agents:
+        if self.enable_korean_evidence_agents and not self.korean_role_upgrade:
             workflow.add_edge(START, "Disclosure Evidence Analyst")
             workflow.add_edge(START, "Macro Evidence Analyst")
             workflow.add_edge(START, "Flow Evidence Analyst")
@@ -222,7 +238,22 @@ class GraphSetup:
             if i < len(plan.specs) - 1:
                 workflow.add_edge(current_clear, plan.specs[i + 1].agent_node)
             else:
-                workflow.add_edge(current_clear, "Bull Researcher")
+                workflow.add_edge(current_clear, "Macro Evidence Analyst" if self.korean_role_upgrade else "Bull Researcher")
+
+        if self.korean_role_upgrade:
+            workflow.add_node(
+                "Macro Evidence Analyst",
+                self._with_progress("Macro Evidence Analyst", create_macro_evidence_analyst(self.quick_thinking_llm)),
+            )
+            if self.enable_kronos_evidence_agent:
+                workflow.add_node(
+                    "Time-Series Forecast Evidence Analyst",
+                    self._with_progress("Time-Series Forecast Evidence Analyst", create_kronos_evidence_analyst(self.quick_thinking_llm)),
+                )
+                workflow.add_edge("Macro Evidence Analyst", "Time-Series Forecast Evidence Analyst")
+                workflow.add_edge("Time-Series Forecast Evidence Analyst", "Bull Researcher")
+            else:
+                workflow.add_edge("Macro Evidence Analyst", "Bull Researcher")
 
         # Both research-debate edges share the complete DEBATE_PATH_MAP (#1088).
         for debate_node in ("Bull Researcher", "Bear Researcher"):

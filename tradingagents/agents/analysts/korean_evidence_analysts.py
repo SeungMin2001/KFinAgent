@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
@@ -81,6 +82,13 @@ _DOMAIN_INSTRUCTIONS = {
         "frequency, p10/p50/p90 range, and uncertainty exactly as supplied. A model output is not a calibrated "
         "probability or a recommendation. Preserve its limitations and identify disagreement with observed evidence.",
     ),
+    "fundamentals": (
+        "Fundamentals & Financial Disclosure Analyst",
+        "fundamentals_report",
+        "Extract only company financial results, earnings guidance, capital actions, material contracts, and "
+        "business metrics explicitly present in the DART evidence. Separate reported facts from interpretation, "
+        "and explicitly mark missing financial-statement fields rather than inferring them.",
+    ),
 }
 
 
@@ -141,7 +149,13 @@ def _evidence_prompt(
     )
 
 
-def _create_evidence_analyst(llm, domain: str, max_chunk_chars: int = 60_000):
+def _create_evidence_analyst(
+    llm,
+    domain: str,
+    max_chunk_chars: int = 60_000,
+    aliases: tuple[str, ...] = (),
+    emit_message: bool = False,
+):
     agent_name, report_key, domain_instruction = _DOMAIN_INSTRUCTIONS[domain]
     structured_llm = bind_structured(llm, EvidenceReport, agent_name)
 
@@ -191,7 +205,10 @@ def _create_evidence_analyst(llm, domain: str, max_chunk_chars: int = 60_000):
             report = invoke_structured_strict(
                 structured_llm, synthesis_prompt, render_evidence_report, agent_name
             )
-        return {report_key: report}
+        result = {report_key: report, **dict.fromkeys(aliases, report)}
+        if emit_message:
+            result["messages"] = [AIMessage(content=report)]
+        return result
 
     return node
 
@@ -210,3 +227,20 @@ def create_flow_evidence_analyst(llm):
 
 def create_kronos_evidence_analyst(llm):
     return _create_evidence_analyst(llm, "kronos")
+
+
+def create_korean_flow_sentiment_analyst(llm):
+    """Korean replacement for the upstream social/sentiment analyst."""
+    return _create_evidence_analyst(llm, "flow", aliases=("sentiment_report",), emit_message=True)
+
+
+def create_korean_disclosure_event_analyst(llm, max_chunk_chars: int = 60_000):
+    """Korean replacement for the upstream news analyst using official DART filings."""
+    return _create_evidence_analyst(
+        llm, "disclosure", max_chunk_chars=max_chunk_chars, aliases=("news_report",), emit_message=True
+    )
+
+
+def create_korean_fundamentals_analyst(llm, max_chunk_chars: int = 60_000):
+    """Korean replacement for the upstream fundamentals analyst using DART evidence."""
+    return _create_evidence_analyst(llm, "fundamentals", max_chunk_chars=max_chunk_chars, emit_message=True)

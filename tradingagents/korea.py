@@ -26,6 +26,7 @@ def korean_stock_config(overrides: dict[str, Any] | None = None) -> dict[str, An
         {
             "output_language": "Korean",
             "instrument_identity_provider": "none",
+            "korean_role_upgrade": True,
             # Disable the yfinance-based reflection path in this KIS-only MVP.
             "memory_log_path": None,
             "data_cache_dir": str(project_root / ".cache"),
@@ -58,7 +59,7 @@ def create_korean_stock_graph(
     source-bounded Disclosure, Macro, and Flow analysts used by enhanced mode.
     """
     return TradingAgentsGraph(
-        selected_analysts=("market",),
+        selected_analysts=("market", "social", "news", "fundamentals"),
         config=korean_stock_config(config_overrides),
         debug=debug,
         progress_callback=progress_callback,

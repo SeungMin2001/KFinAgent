@@ -22,6 +22,16 @@ def create_research_manager(llm):
         history = state["investment_debate_state"].get("history", "")
 
         investment_debate_state = state["investment_debate_state"]
+        direct_evidence = "\n\n".join(
+            part for part in (
+                f"Market report:\n{state.get('market_report', '')}",
+                f"Flow & sentiment report:\n{state.get('sentiment_report', '')}",
+                f"Disclosure & event report:\n{state.get('news_report', '')}",
+                f"Fundamentals report:\n{state.get('fundamentals_report', '')}",
+                f"Macro report:\n{state.get('macro_report', '')}",
+                f"Kronos report:\n{state.get('kronos_report', '')}",
+            ) if part.split("\n", 1)[1]
+        )
 
         prompt = f"""As the Research Manager and debate facilitator, your role is to critically evaluate this round of debate and deliver a clear, actionable investment plan for the trader.
 
@@ -42,6 +52,9 @@ Commit to a directional stance only when the debate's strongest arguments clearl
 
 **Debate History:**
 {history}
+
+**Direct evidence reports (do not discard conflicts or stated limitations):**
+{direct_evidence}
 
 {NO_EXTERNAL_TOOLS}""" + get_language_instruction()
 

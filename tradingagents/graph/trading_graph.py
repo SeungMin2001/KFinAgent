@@ -159,6 +159,7 @@ class TradingAgentsGraph:
             korean_disclosure_chunk_chars=int(
                 self.config.get("korean_disclosure_chunk_chars", 60_000)
             ),
+            korean_role_upgrade=bool(self.config.get("korean_role_upgrade", False)),
         )
 
         self.propagator = Propagator(

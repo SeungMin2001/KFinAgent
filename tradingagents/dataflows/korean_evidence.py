@@ -51,6 +51,7 @@ def evidence_for_domain(snapshot: str, domain: str) -> str:
     selectors = {
         "market": ("Verified market data snapshot", "Deterministic chart summary"),
         "disclosure": ("OpenDART disclosures",),
+        "fundamentals": ("OpenDART disclosures",),
         "macro": ("US macro snapshot", "FRED:", "Bank of Korea ECOS macro snapshot"),
         "flow": ("KIS investor flow snapshot",),
         "kronos": ("Kronos forecast snapshot",),
