@@ -85,3 +85,4 @@ def test_forecast_contract_with_fake_predictor(monkeypatch):
     assert result["expected_return_pct"] == 2.0
     assert result["upside_probability"] == 1.0
     assert len(result["median_path"]) == 1
+    assert result["median_path"][0]["volume"] == 1000.0

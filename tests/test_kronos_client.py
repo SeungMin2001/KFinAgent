@@ -26,7 +26,13 @@ def response_for(frame: pd.DataFrame, horizon: int = 12) -> dict:
         "expected_return_pct": 1.0, "upside_probability": 0.67,
         "return_p10_pct": -1.0, "return_p50_pct": 1.0, "return_p90_pct": 3.0,
         "uncertainty_pct": 1.5,
-        "median_path": [{"timestamp": str(index), "close": 102.0} for index in range(horizon)],
+        "median_path": [
+            {
+                "timestamp": str(index), "open": 101.0, "high": 103.0,
+                "low": 100.0, "close": 102.0, "volume": 1_100.0,
+            }
+            for index in range(horizon)
+        ],
     }
 
 

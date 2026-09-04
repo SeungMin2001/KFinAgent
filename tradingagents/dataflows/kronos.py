@@ -84,6 +84,21 @@ def _validated_response(data: object, symbol: str, input_end_date: str, horizon:
         raise RuntimeError("Kronos return quantiles are not ordered.")
     if not isinstance(data["median_path"], list) or len(data["median_path"]) != horizon:
         raise RuntimeError(f"Kronos median_path must contain exactly {horizon} rows.")
+    path_fields = {"timestamp", "open", "high", "low", "close", "volume"}
+    for index, row in enumerate(data["median_path"]):
+        if not isinstance(row, dict):
+            raise RuntimeError(f"Kronos median_path row {index} must be an object.")
+        row_missing = sorted(path_fields - row.keys())
+        if row_missing:
+            raise RuntimeError(
+                f"Kronos median_path row {index} is missing required fields: {', '.join(row_missing)}"
+            )
+        for field in path_fields - {"timestamp"}:
+            value = row[field]
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                raise RuntimeError(f"Kronos median_path row {index} field {field} must be a finite number.")
+        if any(row[field] <= 0 for field in {"open", "high", "low", "close"}) or row["volume"] < 0:
+            raise RuntimeError(f"Kronos median_path row {index} has invalid OHLCV values.")
     return data
 
 

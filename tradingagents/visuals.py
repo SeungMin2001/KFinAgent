@@ -42,8 +42,12 @@ def build_visual_summary(market_bars: pd.DataFrame) -> str:
     return "\n".join(lines)
 
 
-def _forecast_path(snapshot: str) -> tuple[list[tuple[pd.Timestamp, float]], float | None, float | None]:
-    rows: list[tuple[pd.Timestamp, float]] = []
+def _forecast_path(
+    snapshot: str,
+) -> tuple[list[tuple[pd.Timestamp, float]], list[tuple[pd.Timestamp, float]], float | None, float | None]:
+    """Extract the median close and volume paths rendered in the evidence table."""
+    price_rows: list[tuple[pd.Timestamp, float]] = []
+    volume_rows: list[tuple[pd.Timestamp, float]] = []
     in_table = False
     for line in snapshot.splitlines():
         if line.strip() == "### Median forecast path":
@@ -53,9 +57,11 @@ def _forecast_path(snapshot: str) -> tuple[list[tuple[pd.Timestamp, float]], flo
             break
         if in_table and line.startswith("|") and "T" in line:
             cells = [cell.strip() for cell in line.strip("|").split("|")]
-            if len(cells) >= 5:
+            if len(cells) >= 6:
                 try:
-                    rows.append((pd.Timestamp(cells[0]), float(cells[4])))
+                    timestamp = pd.Timestamp(cells[0])
+                    price_rows.append((timestamp, float(cells[4])))
+                    volume_rows.append((timestamp, float(cells[5])))
                 except (TypeError, ValueError):
                     continue
     range_match = re.search(
@@ -63,8 +69,8 @@ def _forecast_path(snapshot: str) -> tuple[list[tuple[pd.Timestamp, float]], flo
         snapshot,
     )
     if not range_match:
-        return rows, None, None
-    return rows, float(range_match.group(1)), float(range_match.group(2))
+        return price_rows, volume_rows, None, None
+    return price_rows, volume_rows, float(range_match.group(1)), float(range_match.group(2))
 
 
 def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snapshot: str) -> Path:
@@ -75,7 +81,7 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
     dates = pd.to_datetime(bars["Date"])
     closes = pd.to_numeric(bars["Close"], errors="raise").tolist()
     volumes = pd.to_numeric(bars["Volume"], errors="raise").tolist()
-    forecasts, p10, p90 = _forecast_path(snapshot)
+    forecasts, forecast_volumes, p10, p90 = _forecast_path(snapshot)
 
     width, height = 1200, 720
     left, right = 92, 48
@@ -108,7 +114,20 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
 
     history_y = [price_y(value) for value in closes]
     forecast_y = [price_y(value) for value in forecast_values]
-    volume_y, _, _ = scaled(volumes, volume_top, volume_bottom, 0, max(volumes) if volumes else 1)
+    forecast_volume_values = [value for _, value in forecast_volumes]
+    volume_y, volume_low, volume_high = scaled(
+        volumes + forecast_volume_values,
+        volume_top,
+        volume_bottom,
+        0,
+        max(volumes + forecast_volume_values) if volumes or forecast_volume_values else 1,
+    )
+
+    def volume_scale(value: float) -> float:
+        return volume_bottom - ((value - volume_low) / (volume_high - volume_low)) * (volume_bottom - volume_top)
+
+    observed_volume_y = volume_y[:len(volumes)]
+    forecast_volume_y = [volume_scale(value) for value in forecast_volume_values]
 
     total_points = len(closes) + len(forecasts)
     history_points = " ".join(f"{x(i, total_points):.1f},{history_y[i]:.1f}" for i in range(len(closes)))
@@ -123,9 +142,23 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
         )
     bar_width = max(2, plot_width / max(total_points, 1) * 0.62)
     volume_rects = "".join(
-        f'<rect x="{x(i, total_points) - bar_width / 2:.1f}" y="{volume_y[i]:.1f}" width="{bar_width:.1f}" '
-        f'height="{volume_bottom - volume_y[i]:.1f}" fill="#7ba7d9" opacity="0.82"/>'
+        f'<rect x="{x(i, total_points) - bar_width / 2:.1f}" y="{observed_volume_y[i]:.1f}" width="{bar_width:.1f}" '
+        f'height="{volume_bottom - observed_volume_y[i]:.1f}" fill="#7ba7d9" opacity="0.82"/>'
         for i in range(len(volumes))
+    )
+    forecast_volume_points = ""
+    if forecast_volumes:
+        forecast_volume_points = " ".join(
+            [f"{x(len(closes) - 1, total_points):.1f},{observed_volume_y[-1]:.1f}"]
+            + [
+                f"{x(len(closes) + i, total_points):.1f},{forecast_volume_y[i]:.1f}"
+                for i in range(len(forecast_volumes))
+            ]
+        )
+    forecast_volume_dots = "".join(
+        f'<circle cx="{x(len(closes) + index, total_points):.1f}" cy="{forecast_volume_y[index]:.1f}" '
+        'r="3.5" class="forecast-volume-dot"/>'
+        for index in range(len(forecast_volumes))
     )
     forecast_band = ""
     if forecasts and p10 is not None and p90 is not None:
@@ -174,8 +207,8 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
     final_y = forecast_y[-1] if forecasts else latest_y
     target.write_text(
         f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="KIS historical price and Kronos forecast chart">
-<title>KIS historical close and Kronos forecast</title><desc>Observed KIS closing prices are black. The dashed red line is the Kronos median forecast after the cut-off. The red vertical mark is the p10 to p90 range at the final forecast day.</desc>
-<style>.bg{{fill:#ffffff}}.title{{font:600 22px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#1a1a1a}}.subtitle{{font:13px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#5b6570}}.panel{{font:600 14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#1a1a1a}}.axis-label{{font:12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#5b6570}}.annotation{{font:600 12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#a63e33}}.window-label{{font:600 11px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#ad6257;letter-spacing:1px}}.grid{{stroke:#e2e5e8;stroke-width:1}}.divider{{stroke:#bfc5ca;stroke-width:1}}.cutoff{{stroke:#606870;stroke-width:1.1;stroke-dasharray:4 4}}.forecast-window{{fill:#fcf5f2}}.hist{{fill:none;stroke:#2b2b2b;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}}.forecast{{fill:none;stroke:#c64e3b;stroke-width:2.7;stroke-dasharray:7 4;stroke-linecap:round;stroke-linejoin:round}}.actual-dot{{fill:#2b2b2b;stroke:#ffffff;stroke-width:2}}.forecast-dot{{fill:#c64e3b;stroke:#ffffff;stroke-width:2}}</style>
+<title>KIS historical close and volume with Kronos forecast</title><desc>Observed KIS closing prices are black and observed KIS volumes are blue bars. Dashed red lines are Kronos median close and median volume forecasts after the cut-off. The red vertical mark is the p10 to p90 close-return range at the final forecast day.</desc>
+<style>.bg{{fill:#ffffff}}.title{{font:600 22px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#1a1a1a}}.subtitle{{font:13px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#5b6570}}.panel{{font:600 14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#1a1a1a}}.axis-label{{font:12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#5b6570}}.annotation{{font:600 12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#a63e33}}.window-label{{font:600 11px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#ad6257;letter-spacing:1px}}.grid{{stroke:#e2e5e8;stroke-width:1}}.divider{{stroke:#bfc5ca;stroke-width:1}}.cutoff{{stroke:#606870;stroke-width:1.1;stroke-dasharray:4 4}}.forecast-window{{fill:#fcf5f2}}.hist{{fill:none;stroke:#2b2b2b;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}}.forecast{{fill:none;stroke:#c64e3b;stroke-width:2.7;stroke-dasharray:7 4;stroke-linecap:round;stroke-linejoin:round}}.forecast-volume{{fill:none;stroke:#c64e3b;stroke-width:2.3;stroke-dasharray:6 4;stroke-linecap:round;stroke-linejoin:round}}.actual-dot{{fill:#2b2b2b;stroke:#ffffff;stroke-width:2}}.forecast-dot{{fill:#c64e3b;stroke:#ffffff;stroke-width:2}}.forecast-volume-dot{{fill:#c64e3b;stroke:#ffffff;stroke-width:1.5}}</style>
 <rect width="{width}" height="{height}" class="bg"/>
 <text x="{left}" y="32" class="title">Kronos forecast for KIS closing price</text>
 <text x="{left}" y="55" class="subtitle">Input ends {html.escape(dates.iloc[-1].strftime('%Y-%m-%d'))}; forecast horizon = {len(forecasts)} trading days. Prices in KRW.</text>
@@ -184,9 +217,9 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
 <circle cx="{latest_x:.1f}" cy="{latest_y:.1f}" r="5" class="actual-dot"/><text x="{latest_x - 10:.1f}" y="{latest_y - 12:.1f}" text-anchor="end" class="annotation">{html.escape(actual_label)}</text>
 <circle cx="{final_x:.1f}" cy="{final_y:.1f}" r="5" class="forecast-dot"/><text x="{final_x - 10:.1f}" y="{final_y + 22:.1f}" text-anchor="end" class="annotation">{html.escape(forecast_label)}</text>
 <line x1="{left}" y1="{price_bottom}" x2="{width-right}" y2="{price_bottom}" class="divider"/>
-<text x="{left}" y="510" class="panel">B  |  Observed daily trading volume</text><text x="{width-right}" y="510" text-anchor="end" class="axis-label">Kronos does not forecast volume in this figure</text>
-<line x1="{left}" y1="{volume_bottom}" x2="{width-right}" y2="{volume_bottom}" class="divider"/>{volume_rects}
-{date_labels}<text x="{left}" y="706" class="subtitle">The uncertainty mark is only at the final horizon: this workflow receives p10 and p90 only for that endpoint, and it is not a calibrated confidence interval.</text></svg>''',
+<text x="{left}" y="510" class="panel">B  |  Observed and forecast daily trading volume</text><text x="{width-right}" y="510" text-anchor="end" class="axis-label">blue bars: observed KIS volume · red dashed: Kronos median forecast</text>
+<line x1="{left}" y1="{volume_bottom}" x2="{width-right}" y2="{volume_bottom}" class="divider"/>{volume_rects}<polyline points="{forecast_volume_points}" class="forecast-volume"/>{forecast_volume_dots}
+{date_labels}<text x="{left}" y="706" class="subtitle">The p10–p90 mark applies only to the final close return. Volume is a median path only; this API returns no volume uncertainty interval.</text></svg>''',
         encoding="utf-8",
     )
     return target

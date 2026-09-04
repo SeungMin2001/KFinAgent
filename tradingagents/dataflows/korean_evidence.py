@@ -211,6 +211,9 @@ def kronos_forecast_context(
 
     volatility_20 = close.pct_change().tail(20).std(ddof=1)
     volume_ratio = volume.tail(5).mean() / volume.tail(20).mean() if len(volume) >= 20 and volume.tail(20).mean() else None
+    final_median_volume = float(result["median_path"][-1]["volume"])
+    latest_volume = float(volume.iloc[-1])
+    volume_change = (final_median_volume / latest_volume - 1) * 100 if latest_volume else None
     lines = [
         "## Kronos forecast snapshot (model output)",
         "",
@@ -241,6 +244,10 @@ def kronos_forecast_context(
         f"- Final-return range (p10 / p50 / p90): {result['return_p10_pct']:.4f}% / "
         f"{result['return_p50_pct']:.4f}% / {result['return_p90_pct']:.4f}%",
         f"- Cross-sample uncertainty (standard deviation): {result['uncertainty_pct']:.4f}%",
+        f"- Final-horizon median forecast volume: {final_median_volume:,.0f} "
+        f"({volume_change:+.2f}% versus the latest observed volume)" if volume_change is not None
+        else f"- Final-horizon median forecast volume: {final_median_volume:,.0f}",
+        "- Volume has a median forecast path only. No volume quantiles or calibrated uncertainty interval are returned.",
         "",
         "### Median forecast path",
         "",
