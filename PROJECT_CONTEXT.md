@@ -134,6 +134,48 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 
 ## 주의할 버그/교훈
 
+### 공개용 두 구간 평가 진행 (2026-09-04)
+
+- 후속 안정화: `prepare_global_evidence.py`로 실제 날짜별 글로벌 근거를 수집·고정하고
+  `--global-risk-from`으로 명시적 재사용. 체크섬/날짜/버전/검색식 검증, 누락·손상 시 live fallback 없음.
+  8/19 snapshot 실제 수집 성공: artifacts/frozen_global_evidence/2026-08-19.json.
+- GDELT 429 대기 30/60초 및 Retry-After 존중. 제한이 영구 해결된 것은 아님.
+- 추가 버그: 한국형 Market Analyst가 재무 원문까지 통째로 받던 문제를 발견해
+  market_only_snapshot=True로 가격 자료만 전달하도록 수정. Fundamentals는 별도 분할 분석 유지.
+  수정 전 실행 20260904_220504_453553은 중단/성과 제외. 진행 중 요청의 과금은 확인 불가.
+
+- 실거래 자동매매는 사용자 지시로 범위 제외. 평가/벤치마크 공개자료에 집중.
+- `scripts/benchmark_regimes.py`: 기본 dry plan, `--run`은 KIS 실제 기준선 suite 실행.
+  A=1/1~6/22, B=7/1~9/3 실측. 비용 10/30/50bp × 초기 보유 0/50% = 12조건 완료.
+- BuyHold/현금/SMA/MACD/RSI 5개 기준선. 현금 시작·10bp에서 A BuyHold +270.87%,
+  MACD +184.49%; B BuyHold -32.75%, MACD -9.09%, RSI -4.32%, 현금 0%.
+- `docs/BENCHMARK_REGIMES.md`, `docs/benchmark_results/regimes.json`, 구간별 SVG에 결과 기록.
+  로컬 종합: artifacts/benchmarks/regimes_20260904_215552_020361/SUITE_v2.html.
+- AI 2회 smoke 실행은 수집 HTTP 오류로 중단; 후속 글로벌 근거 단독 진단 GDELT 429.
+  LLM 토론/새 AI 성과 없음. 뉴스 누락 fallback 금지. RunPod health 200 확인만 완료.
+- benchmark runner에 모델별 usage_metadata 계측 추가. 성공 실행 전이므로 비용 측정값은 없음.
+- 전체 토론 cap 기본 0인 suite로 대량 LLM 호출 방지. 그래프 수 cap은 토큰/요금 cap이 아님.
+- 후속 AI suite 반복/정책 비교는 근거 공급 복구 및 비용 확인 후 진행. README 복원/실거래 구현 안 함.
+
+### 2026-09-04 무료 글로벌 근거 확장
+
+- 사용자 지정 평가 구간: A=2026-01-01~06-22, B=2026-07-01~최신 완료 거래일. 6/23~6/30 제외.
+- `--enhanced --global-risk`: GDELT 국제 분쟁 제목/URL/최초수집시각, BOJ 실제 익일물 콜금리,
+  기존 FRED 키로 달러/엔·브렌트유 수집 → Macro Evidence Analyst → 기존 토론.
+- `scripts/check_global_risk.py --date YYYY-MM-DD`로 LLM/GPU 없이 독립 연결 점검.
+- API 실패는 중단. GDELT 범위 밖 반환은 필터링하며 전체 범위 밖이면 실패.
+- BOJ 콜금리는 정책 목표가 아니다. 정책 결정 발표문/회의 일정은 미구현.
+  BOJ 최신 수정본과 뉴스 아카이브 한계 때문에 엄밀한 PIT 성과를 주장하면 안 된다.
+- 기존 결과 보존을 위해 글로벌 근거는 명시적 플래그로 켠다. 새 전체 구간 성과는 아직 미실행.
+- 후속 수정: 벤치마크 기본 step 배분(Buy +50%p/Overweight +25%p/Underweight -25%p/Sell 0),
+  `--allocation-policy binary`로 기존 방식 비교, `--initial-exposure 0.5`로 기존 보유 평가 지원.
+  Hold는 수량 유지이며 WAIT/HOLD_POSITION 실행 행동을 분리한다. 실제 현재 평가 비중을 Agent에 전달.
+- 재무 부족 원인: 최근 공시 45일/3건만으로 정기보고서가 빠질 수 있었음.
+  별도 정기공시 검색(550일, 분석일 전날 마감) 후 최신 회계기간 원문을 재무 Agent에 제공하도록 수정.
+  긴 재무 원문도 분할/합성하여 무단 생략하지 않음. 삼성전자 2026.06 반기보고서 실수집 검증 완료.
+- 수정 후 전체 LLM 판단/성과 재평가는 아직 미실행. Hold가 실제로 줄었다고 주장하면 안 됨.
+- 사용 문서: `docs/GLOBAL_RISK.md`.
+
 - DART `corp_code` XML은 정규식 전체 매칭을 쓰면 다른 기업 코드가 잡힐 수 있다. 현재는 XML 항목 단위 파싱으로 수정됨.
 - KIS 캔들을 Market Agent가 중복 재조회하면 KIS가 500을 낼 수 있다. 현재 실행 스크립트는 사전 검증 스냅샷을 Agent 상태로 전달해 중복 조회를 피한다.
 - KIS 당일 확정 수급은 15:40 이전 `OPSQ2001`이 날 수 있다. 분석일이 오늘인 경우에만 직전 완료 거래일의 실제 KIS 수급을 조회하고 요청일·실제 수급 기준일을 모두 기록한다.

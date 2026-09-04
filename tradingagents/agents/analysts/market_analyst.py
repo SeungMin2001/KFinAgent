@@ -15,6 +15,7 @@ def create_market_analyst(
     preload_verified_snapshot: bool = False,
     use_korean_evidence_reports: bool = False,
     use_kronos_evidence_report: bool = False,
+    market_only_snapshot: bool = False,
 ):
 
     def market_analyst_node(state):
@@ -37,7 +38,7 @@ def create_market_analyst(
                 verified_snapshot = get_verified_market_snapshot.invoke(
                     {"symbol": state["company_of_interest"], "curr_date": current_date}
                 )
-            if use_korean_evidence_reports:
+            if use_korean_evidence_reports or market_only_snapshot:
                 market_only = evidence_for_domain(verified_snapshot, "market")
                 if not market_only:
                     raise RuntimeError("Market Analyst received no verified market evidence section")

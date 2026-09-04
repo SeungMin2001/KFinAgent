@@ -14,7 +14,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tradingagents.benchmark import metrics, write_report
+from tradingagents.benchmark import metrics, write_report  # noqa: E402
 
 
 def combine(runs: list[Path], output: Path):
@@ -31,6 +31,12 @@ def combine(runs: list[Path], output: Path):
             "cadence_sessions",
             "capital_per_symbol",
             "model_override",
+            "global_risk",
+            "global_risk_source",
+            "global_snapshot_sha256",
+            "allocation_policy",
+            "initial_exposure",
+            "periodic_fundamentals",
             "llm_config",
             "git_commit",
         ):
@@ -44,7 +50,7 @@ def combine(runs: list[Path], output: Path):
     curves, trades, individual = {}, {}, {}
     for strategy in reference["strategies"]:
         sleeves, orders = [], []
-        for run, manifest in zip(runs, manifests):
+        for run, manifest in zip(runs, manifests, strict=True):
             orders.extend(json.loads((run / "trades.json").read_text())[strategy])
             for symbol in manifest["symbols"]:
                 path = run / f"{strategy}_{symbol}_equity.csv"
@@ -65,7 +71,7 @@ def combine(runs: list[Path], output: Path):
     combined["source_snapshots_available"] = all(bool(m.get("source_sha256")) for m in manifests)
     combined["agent_graph_calls"] = sum(m["agent_graph_calls"] for m in manifests)
     combined["input_sha256"] = {k: v for m in manifests for k, v in m["input_sha256"].items()}
-    for run, manifest in zip(runs, manifests):
+    for run, manifest in zip(runs, manifests, strict=True):
         for name, digest in manifest["input_sha256"].items():
             path = run / name
             if hashlib.sha256(path.read_bytes()).hexdigest() != digest:

@@ -1,0 +1,1342 @@
+{
+  "status": "complete",
+  "kind": "rules_only_not_AI",
+  "symbols": [
+    "005930",
+    "000660"
+  ],
+  "results": [
+    {
+      "condition": {
+        "regime": "A",
+        "start": "2026-01-01",
+        "end": "2026-06-22",
+        "cost": 10,
+        "exposure": 0,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": 270.8692681372624,
+          "annualized_return_pct": 1712.4985273202935,
+          "sharpe_rf0": 4.163591601785323,
+          "max_drawdown_pct": -24.87765393343061,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 1998.0019980019983,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9990009990009991,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 114,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": -270.8692681372624,
+          "mean_daily_log_excess_bps_ci95": [
+            -182.8499049346643,
+            -48.31710508998456
+          ]
+        },
+        "sma": {
+          "return_pct": 270.8692681372624,
+          "annualized_return_pct": 1712.4985273202935,
+          "sharpe_rf0": 4.163591601785323,
+          "max_drawdown_pct": -24.87765393343061,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 1998.0019980019983,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9990009990009991,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "macd": {
+          "return_pct": 184.48610926946287,
+          "annualized_return_pct": 908.5883208048251,
+          "sharpe_rf0": 3.743821384643372,
+          "max_drawdown_pct": -22.108819208095255,
+          "sessions": 114,
+          "trades": 8,
+          "cost_paid": 14075.005589015498,
+          "mean_exposure_pct": 73.68421052631578,
+          "invested_sessions_pct": 73.68421052631578,
+          "turnover_initial_capital": 7.037502794507749,
+          "excess_buy_hold_pp": -86.38315886779952,
+          "mean_daily_log_excess_bps_ci95": [
+            -67.12908631059942,
+            16.940679697334915
+          ]
+        },
+        "rsi": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 114,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": -270.8692681372624,
+          "mean_daily_log_excess_bps_ci95": [
+            -182.8499049346643,
+            -48.31710508998456
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "A",
+        "start": "2026-01-01",
+        "end": "2026-06-22",
+        "cost": 10,
+        "exposure": 0.5,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": 271.2386643088851,
+          "annualized_return_pct": 1716.4915948272953,
+          "sharpe_rf0": 4.166027810650575,
+          "max_drawdown_pct": -24.876633652524806,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 999.0009990009992,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.4995004995004996,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.012489574645546675,
+          "annualized_return_pct": 0.02761062050669061,
+          "sharpe_rf0": 1.4867838833500566,
+          "max_drawdown_pct": 0.0,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 1001.2510425354462,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.5006255212677231,
+          "excess_buy_hold_pp": -271.2261747342396,
+          "mean_daily_log_excess_bps_ci95": [
+            -183.09733854373417,
+            -48.4818510870224
+          ]
+        },
+        "sma": {
+          "return_pct": 271.2386643088851,
+          "annualized_return_pct": 1716.4915948272953,
+          "sharpe_rf0": 4.166027810650575,
+          "max_drawdown_pct": -24.876633652524806,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 999.0009990009992,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.4995004995004996,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "macd": {
+          "return_pct": 184.79238598635322,
+          "annualized_return_pct": 910.9901685159153,
+          "sharpe_rf0": 3.746701445190415,
+          "max_drawdown_pct": -22.107720491172035,
+          "sessions": 114,
+          "trades": 8,
+          "cost_paid": 13089.44450264053,
+          "mean_exposure_pct": 73.68421052631578,
+          "invested_sessions_pct": 73.68421052631578,
+          "turnover_initial_capital": 6.544722251320265,
+          "excess_buy_hold_pp": -86.4462783225319,
+          "mean_daily_log_excess_bps_ci95": [
+            -67.10012150391115,
+            16.941551565518136
+          ]
+        },
+        "rsi": {
+          "return_pct": 10.24247769838922,
+          "annualized_return_pct": 24.05477990124809,
+          "sharpe_rf0": 3.2564435900120685,
+          "max_drawdown_pct": -0.8719331500120275,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 1206.0556095773618,
+          "mean_exposure_pct": 5.6302003871451385,
+          "invested_sessions_pct": 10.526315789473683,
+          "turnover_initial_capital": 0.6030278047886808,
+          "excess_buy_hold_pp": -260.9961866104959,
+          "mean_daily_log_excess_bps_ci95": [
+            -170.1916345390926,
+            -44.51269152541812
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "A",
+        "start": "2026-01-01",
+        "end": "2026-06-22",
+        "cost": 30,
+        "exposure": 0,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": 270.1297481609169,
+          "annualized_return_pct": 1704.5189843287733,
+          "sharpe_rf0": 4.158865042966587,
+          "max_drawdown_pct": -24.8776539334306,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 5982.053838484548,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9970089730807578,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 114,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": -270.1297481609169,
+          "mean_daily_log_excess_bps_ci95": [
+            -182.32463950131876,
+            -48.280872398976115
+          ]
+        },
+        "sma": {
+          "return_pct": 270.1297481609169,
+          "annualized_return_pct": 1704.5189843287733,
+          "sharpe_rf0": 4.158865042966587,
+          "max_drawdown_pct": -24.8776539334306,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 5982.053838484548,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9970089730807578,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "macd": {
+          "return_pct": 182.21928993947367,
+          "annualized_return_pct": 890.9089396843547,
+          "sharpe_rf0": 3.721290416500616,
+          "max_drawdown_pct": -22.10881920809523,
+          "sessions": 114,
+          "trades": 8,
+          "cost_paid": 42034.647667799894,
+          "mean_exposure_pct": 73.68421052631578,
+          "invested_sessions_pct": 73.68421052631578,
+          "turnover_initial_capital": 7.005774611299981,
+          "excess_buy_hold_pp": -87.91045822144324,
+          "mean_daily_log_excess_bps_ci95": [
+            -67.7926728917283,
+            16.48063051593272
+          ]
+        },
+        "rsi": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 114,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": -270.1297481609169,
+          "mean_daily_log_excess_bps_ci95": [
+            -182.32463950131876,
+            -48.280872398976115
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "A",
+        "start": "2026-01-01",
+        "end": "2026-06-22",
+        "cost": 30,
+        "exposure": 0.5,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": 270.8689043207124,
+          "annualized_return_pct": 1712.494596938875,
+          "sharpe_rf0": 4.163693318522059,
+          "max_drawdown_pct": -24.876632635449745,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 2991.026919242274,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.4985044865403789,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": -0.08763552960799892,
+          "annualized_return_pct": -0.1936178963329871,
+          "sharpe_rf0": -1.4867838833500557,
+          "max_drawdown_pct": -0.08763552960799892,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 3003.7531276063387,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.5006255212677231,
+          "excess_buy_hold_pp": -270.9565398503204,
+          "mean_daily_log_excess_bps_ci95": [
+            -183.09870264555403,
+            -48.48274165567893
+          ]
+        },
+        "sma": {
+          "return_pct": 270.8689043207124,
+          "annualized_return_pct": 1712.494596938875,
+          "sharpe_rf0": 4.163693318522059,
+          "max_drawdown_pct": -24.876632635449745,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 2991.026919242274,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.4985044865403789,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "macd": {
+          "return_pct": 182.8056706249236,
+          "annualized_return_pct": 895.4658270735318,
+          "sharpe_rf0": 3.7268226606972403,
+          "max_drawdown_pct": -22.10771939590741,
+          "sessions": 114,
+          "trades": 8,
+          "cost_paid": 39119.839912017356,
+          "mean_exposure_pct": 73.68421052631578,
+          "invested_sessions_pct": 73.68421052631578,
+          "turnover_initial_capital": 6.519973318669559,
+          "excess_buy_hold_pp": -88.06323369578877,
+          "mean_daily_log_excess_bps_ci95": [
+            -67.78251074661236,
+            16.479052490264
+          ]
+        },
+        "rsi": {
+          "return_pct": 10.121872137431476,
+          "annualized_return_pct": 23.754974181474566,
+          "sharpe_rf0": 3.2143174636308807,
+          "max_drawdown_pct": -0.8719331500120275,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 3618.166828732085,
+          "mean_exposure_pct": 5.6302003871451385,
+          "invested_sessions_pct": 10.526315789473683,
+          "turnover_initial_capital": 0.6030278047886808,
+          "excess_buy_hold_pp": -260.7470321832809,
+          "mean_daily_log_excess_bps_ci95": [
+            -170.13471278045313,
+            -44.53535500256731
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "A",
+        "start": "2026-01-01",
+        "end": "2026-06-22",
+        "cost": 50,
+        "exposure": 0,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": 269.3931715476614,
+          "annualized_return_pct": 1696.5903620719607,
+          "sharpe_rf0": 4.154086729900646,
+          "max_drawdown_pct": -24.877653933430622,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 9950.248756218907,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9950248756218907,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 114,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": -269.3931715476614,
+          "mean_daily_log_excess_bps_ci95": [
+            -181.80042041414998,
+            -48.28087239897565
+          ]
+        },
+        "sma": {
+          "return_pct": 269.3931715476614,
+          "annualized_return_pct": 1696.5903620719607,
+          "sharpe_rf0": 4.154086729900646,
+          "max_drawdown_pct": -24.877653933430622,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 9950.248756218907,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9950248756218907,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "macd": {
+          "return_pct": 179.97050601915095,
+          "annualized_return_pct": 873.5392509687731,
+          "sharpe_rf0": 3.6984607732505843,
+          "max_drawdown_pct": -22.10881920809524,
+          "sessions": 114,
+          "trades": 8,
+          "cost_paid": 69742.42998221832,
+          "mean_exposure_pct": 73.68421052631578,
+          "invested_sessions_pct": 73.68421052631578,
+          "turnover_initial_capital": 6.974242998221833,
+          "excess_buy_hold_pp": -89.42266552851044,
+          "mean_daily_log_excess_bps_ci95": [
+            -68.61136819119596,
+            15.93702102059945
+          ]
+        },
+        "rsi": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 114,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": -269.3931715476614,
+          "mean_daily_log_excess_bps_ci95": [
+            -181.80042041414998,
+            -48.28087239897565
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "A",
+        "start": "2026-01-01",
+        "end": "2026-06-22",
+        "cost": 50,
+        "exposure": 0.5,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": 270.50061601408464,
+          "annualized_return_pct": 1708.5182998509183,
+          "sharpe_rf0": 4.161350447750437,
+          "max_drawdown_pct": -24.876631620405064,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 4975.124378109454,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.49751243781094534,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": -0.18776063386155561,
+          "annualized_return_pct": -0.4145782027068723,
+          "sharpe_rf0": -1.4867838833500566,
+          "max_drawdown_pct": -0.18776063386155561,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 5006.255212677232,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.5006255212677231,
+          "excess_buy_hold_pp": -270.6883766479462,
+          "mean_daily_log_excess_bps_ci95": [
+            -183.10111470709026,
+            -48.48431339036183
+          ]
+        },
+        "sma": {
+          "return_pct": 270.50061601408464,
+          "annualized_return_pct": 1708.5182998509183,
+          "sharpe_rf0": 4.161350447750437,
+          "max_drawdown_pct": -24.876631620405064,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 4975.124378109454,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.49751243781094534,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "macd": {
+          "return_pct": 180.83250734079525,
+          "annualized_return_pct": 880.1775001945838,
+          "sharpe_rf0": 3.7067035117297973,
+          "max_drawdown_pct": -22.10771830282927,
+          "sessions": 114,
+          "trades": 8,
+          "cost_paid": 64953.58033635093,
+          "mean_exposure_pct": 73.68421052631578,
+          "invested_sessions_pct": 73.68421052631578,
+          "turnover_initial_capital": 6.495358033635094,
+          "excess_buy_hold_pp": -89.6681086732894,
+          "mean_daily_log_excess_bps_ci95": [
+            -68.58932795048528,
+            15.933470197452488
+          ]
+        },
+        "rsi": {
+          "return_pct": 10.001266576473732,
+          "annualized_return_pct": 23.455565671610955,
+          "sharpe_rf0": 3.170508028103571,
+          "max_drawdown_pct": -0.8719331500120275,
+          "sessions": 114,
+          "trades": 2,
+          "cost_paid": 6030.278047886808,
+          "mean_exposure_pct": 5.6302003871451385,
+          "invested_sessions_pct": 10.526315789473683,
+          "turnover_initial_capital": 0.6030278047886808,
+          "excess_buy_hold_pp": -260.49934943761093,
+          "mean_daily_log_excess_bps_ci95": [
+            -170.0246900432513,
+            -44.54194332948234
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "B",
+        "start": "2026-07-01",
+        "end": "2026-09-03",
+        "cost": 10,
+        "exposure": 0,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": -32.75432308235883,
+          "annualized_return_pct": -89.16271560708327,
+          "sharpe_rf0": -1.341998995594342,
+          "max_drawdown_pct": -44.31098310484811,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 1998.0019980019983,
+          "mean_exposure_pct": 100.00000000000003,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9990009990009991,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 45,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": 32.75432308235883,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.76357685016739,
+            222.46096468080725
+          ]
+        },
+        "sma": {
+          "return_pct": -30.40860476401749,
+          "annualized_return_pct": -86.86859956998046,
+          "sharpe_rf0": -1.4045113076369375,
+          "max_drawdown_pct": -44.31098310484811,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 3391.2231238474947,
+          "mean_exposure_pct": 53.33333333333334,
+          "invested_sessions_pct": 53.333333333333336,
+          "turnover_initial_capital": 1.6956115619237475,
+          "excess_buy_hold_pp": 2.3457183183413406,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.70515281598663,
+            60.968025340096034
+          ]
+        },
+        "macd": {
+          "return_pct": -9.092645222129313,
+          "annualized_return_pct": -41.36532574780362,
+          "sharpe_rf0": -2.4996639538441743,
+          "max_drawdown_pct": -9.092645222129313,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 1998.0019980019986,
+          "mean_exposure_pct": 20.000000000000004,
+          "invested_sessions_pct": 20.0,
+          "turnover_initial_capital": 0.9990009990009993,
+          "excess_buy_hold_pp": 23.661677860229517,
+          "mean_daily_log_excess_bps_ci95": [
+            -72.8936321151965,
+            203.7211739681969
+          ]
+        },
+        "rsi": {
+          "return_pct": -4.315025948263774,
+          "annualized_return_pct": -21.886704014337298,
+          "sharpe_rf0": -0.26039976522895353,
+          "max_drawdown_pct": -16.285911867846792,
+          "sessions": 45,
+          "trades": 1,
+          "cost_paid": 999.0009990009992,
+          "mean_exposure_pct": 35.341721385301256,
+          "invested_sessions_pct": 73.33333333333333,
+          "turnover_initial_capital": 0.4995004995004996,
+          "excess_buy_hold_pp": 28.439297134095057,
+          "mean_daily_log_excess_bps_ci95": [
+            -29.80050648247179,
+            192.7524969592285
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "B",
+        "start": "2026-07-01",
+        "end": "2026-09-03",
+        "cost": 10,
+        "exposure": 0.5,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": -32.60798291729511,
+          "annualized_return_pct": -89.02998176636459,
+          "sharpe_rf0": -1.3324245219724622,
+          "max_drawdown_pct": -44.1897814631686,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 999.0009990009992,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.4995004995004996,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.128755649079193,
+          "annualized_return_pct": 0.7231701853209982,
+          "sharpe_rf0": 2.3664319132398464,
+          "max_drawdown_pct": 0.0,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 1003.5786916732573,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.5017893458366286,
+          "excess_buy_hold_pp": 32.73673856637431,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.73259048978359,
+            221.83794259549708
+          ]
+        },
+        "sma": {
+          "return_pct": -30.25561189505812,
+          "annualized_return_pct": -86.70611544609635,
+          "sharpe_rf0": -1.3939734246144615,
+          "max_drawdown_pct": -44.1897814631686,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 2395.285045145982,
+          "mean_exposure_pct": 53.333333333333336,
+          "invested_sessions_pct": 53.333333333333336,
+          "turnover_initial_capital": 1.197642522572991,
+          "excess_buy_hold_pp": 2.3523710222369907,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.72078398270599,
+            60.97408230967515
+          ]
+        },
+        "macd": {
+          "return_pct": -8.97672160823687,
+          "annualized_return_pct": -40.94538379074583,
+          "sharpe_rf0": -2.4634461567897463,
+          "max_drawdown_pct": -9.093768516636713,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 3004.1532301163984,
+          "mean_exposure_pct": 20.000000000000004,
+          "invested_sessions_pct": 20.0,
+          "turnover_initial_capital": 1.502076615058199,
+          "excess_buy_hold_pp": 23.63126130905824,
+          "mean_daily_log_excess_bps_ci95": [
+            -73.10063751083267,
+            203.53094670760538
+          ]
+        },
+        "rsi": {
+          "return_pct": -18.388334350247593,
+          "annualized_return_pct": -67.95114241130707,
+          "sharpe_rf0": -1.164546722887395,
+          "max_drawdown_pct": -28.113382737688376,
+          "sessions": 45,
+          "trades": 1,
+          "cost_paid": 499.5004995004996,
+          "mean_exposure_pct": 63.14002610296671,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.2497502497502498,
+          "excess_buy_hold_pp": 14.219648567047518,
+          "mean_daily_log_excess_bps_ci95": [
+            -17.85936621724988,
+            104.8843576779469
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "B",
+        "start": "2026-07-01",
+        "end": "2026-09-03",
+        "cost": 30,
+        "exposure": 0,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": -32.88841216893438,
+          "annualized_return_pct": -89.2831764730739,
+          "sharpe_rf0": -1.3505902169243453,
+          "max_drawdown_pct": -44.42202800394113,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 5982.053838484548,
+          "mean_exposure_pct": 100.00000000000003,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9970089730807579,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 45,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": 32.88841216893438,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.76357685016857,
+            223.28645407358903
+          ]
+        },
+        "sma": {
+          "return_pct": -30.6864155568082,
+          "annualized_return_pct": -87.15947424136132,
+          "sharpe_rf0": -1.4261658952928409,
+          "max_drawdown_pct": -44.42202800394113,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 10153.382892237314,
+          "mean_exposure_pct": 53.33333333333334,
+          "invested_sessions_pct": 53.333333333333336,
+          "turnover_initial_capital": 1.6922304820395524,
+          "excess_buy_hold_pp": 2.2019966121261803,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.70515281598742,
+            60.51155669478884
+          ]
+        },
+        "macd": {
+          "return_pct": -9.273916118994451,
+          "annualized_return_pct": -42.01707422845761,
+          "sharpe_rf0": -2.5152894616902666,
+          "max_drawdown_pct": -9.273916118994451,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 5982.053838484548,
+          "mean_exposure_pct": 20.0,
+          "invested_sessions_pct": 20.0,
+          "turnover_initial_capital": 0.9970089730807579,
+          "excess_buy_hold_pp": 23.61449604993993,
+          "mean_daily_log_excess_bps_ci95": [
+            -73.54705842899624,
+            204.48995391702562
+          ]
+        },
+        "rsi": {
+          "return_pct": -4.406122606392859,
+          "annualized_return_pct": -22.30225159544892,
+          "sharpe_rf0": -0.27202973062836083,
+          "max_drawdown_pct": -16.27042149112825,
+          "sessions": 45,
+          "trades": 1,
+          "cost_paid": 2991.026919242274,
+          "mean_exposure_pct": 35.305244261674865,
+          "invested_sessions_pct": 73.33333333333333,
+          "turnover_initial_capital": 0.49850448654037893,
+          "excess_buy_hold_pp": 28.48228956254152,
+          "mean_daily_log_excess_bps_ci95": [
+            -30.051340838521075,
+            193.65849219988104
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "B",
+        "start": "2026-07-01",
+        "end": "2026-09-03",
+        "cost": 30,
+        "exposure": 0.5,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": -32.67502746058288,
+          "annualized_return_pct": -89.09095745031752,
+          "sharpe_rf0": -1.3367380526013044,
+          "max_drawdown_pct": -44.245303912715116,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 2991.026919242274,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.49850448654037893,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.02839777991188175,
+          "annualized_return_pct": 0.15913147159558605,
+          "sharpe_rf0": 2.366431913239846,
+          "max_drawdown_pct": 0.0,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 3010.736075019772,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.5017893458366286,
+          "excess_buy_hold_pp": 32.70342524049477,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.73255963335711,
+            221.83301633415857
+          ]
+        },
+        "sma": {
+          "return_pct": -30.46448463977569,
+          "annualized_return_pct": -86.92753777739676,
+          "sharpe_rf0": -1.4109655785264703,
+          "max_drawdown_pct": -44.245303912715116,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 7175.711895785362,
+          "mean_exposure_pct": 53.33333333333334,
+          "invested_sessions_pct": 53.333333333333336,
+          "turnover_initial_capital": 1.1959519826308935,
+          "excess_buy_hold_pp": 2.2105428208071913,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.72079954897995,
+            60.517619696050815
+          ]
+        },
+        "macd": {
+          "return_pct": -9.249272176187084,
+          "annualized_return_pct": -41.9288195964229,
+          "sharpe_rf0": -2.507546939206347,
+          "max_drawdown_pct": -9.275036051774233,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 8994.488683987582,
+          "mean_exposure_pct": 20.000000000000004,
+          "invested_sessions_pct": 20.0,
+          "turnover_initial_capital": 1.4990814473312637,
+          "excess_buy_hold_pp": 23.425755284395798,
+          "mean_daily_log_excess_bps_ci95": [
+            -73.97832139813583,
+            203.4259500194005
+          ]
+        },
+        "rsi": {
+          "return_pct": -18.43388267931212,
+          "annualized_return_pct": -68.05118002416715,
+          "sharpe_rf0": -1.1690513734900887,
+          "max_drawdown_pct": -28.151111366149106,
+          "sessions": 45,
+          "trades": 1,
+          "cost_paid": 1495.513459621137,
+          "mean_exposure_pct": 63.12748865587755,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.24925224327018947,
+          "excess_buy_hold_pp": 14.241144781270762,
+          "mean_daily_log_excess_bps_ci95": [
+            -17.997247285274558,
+            105.48772596251905
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "B",
+        "start": "2026-07-01",
+        "end": "2026-09-03",
+        "cost": 50,
+        "exposure": 0,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": -33.02196756760317,
+          "annualized_return_pct": -89.40206239341025,
+          "sharpe_rf0": -1.3591214337727364,
+          "max_drawdown_pct": -44.53263093328653,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 9950.248756218907,
+          "mean_exposure_pct": 100.00000000000003,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.9950248756218907,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": 0.0,
+          "annualized_return_pct": 0.0,
+          "sharpe_rf0": null,
+          "max_drawdown_pct": 0.0,
+          "sessions": 45,
+          "trades": 0,
+          "cost_paid": 0,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.0,
+          "excess_buy_hold_pp": 33.02196756760317,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.76357685016818,
+            224.03631000457816
+          ]
+        },
+        "sma": {
+          "return_pct": -30.963120635000784,
+          "annualized_return_pct": -87.44390910044422,
+          "sharpe_rf0": -1.4477398213763655,
+          "max_drawdown_pct": -44.53263093328653,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 16888.628591897224,
+          "mean_exposure_pct": 53.33333333333334,
+          "invested_sessions_pct": 53.333333333333336,
+          "turnover_initial_capital": 1.6888628591897221,
+          "excess_buy_hold_pp": 2.0588469326023855,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.70515281598702,
+            59.764794709127024
+          ]
+        },
+        "macd": {
+          "return_pct": -9.454465539653178,
+          "annualized_return_pct": -42.660301531475476,
+          "sharpe_rf0": -2.5297826122654117,
+          "max_drawdown_pct": -9.454465539653178,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 9950.248756218905,
+          "mean_exposure_pct": 20.0,
+          "invested_sessions_pct": 20.0,
+          "turnover_initial_capital": 0.9950248756218907,
+          "excess_buy_hold_pp": 23.567502027949992,
+          "mean_daily_log_excess_bps_ci95": [
+            -74.4324062206594,
+            205.36423486129226
+          ]
+        },
+        "rsi": {
+          "return_pct": -4.496856690758245,
+          "annualized_return_pct": -22.71433848031864,
+          "sharpe_rf0": -0.283634190668847,
+          "max_drawdown_pct": -16.254960553812236,
+          "sessions": 45,
+          "trades": 1,
+          "cost_paid": 4975.124378109454,
+          "mean_exposure_pct": 35.26884248441845,
+          "invested_sessions_pct": 73.33333333333333,
+          "turnover_initial_capital": 0.49751243781094534,
+          "excess_buy_hold_pp": 28.525110876844927,
+          "mean_daily_log_excess_bps_ci95": [
+            -30.083929193790155,
+            194.04574999684317
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    },
+    {
+      "condition": {
+        "regime": "B",
+        "start": "2026-07-01",
+        "end": "2026-09-03",
+        "cost": 50,
+        "exposure": 0.5,
+        "policy": "step",
+        "repeat": 1,
+        "strategies": [
+          "buy_hold",
+          "cash",
+          "sma",
+          "macd",
+          "rsi"
+        ]
+      },
+      "metrics": {
+        "buy_hold": {
+          "return_pct": -32.74180515991729,
+          "annualized_return_pct": -89.15141342424113,
+          "sharpe_rf0": -1.3410280969772308,
+          "max_drawdown_pct": -44.30060537738781,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 4975.124378109454,
+          "mean_exposure_pct": 100.0,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.49751243781094534,
+          "excess_buy_hold_pp": 0.0,
+          "mean_daily_log_excess_bps_ci95": [
+            0.0,
+            0.0
+          ]
+        },
+        "cash": {
+          "return_pct": -0.07196008925545172,
+          "annualized_return_pct": -0.4023101163219023,
+          "sharpe_rf0": -2.3664319132398464,
+          "max_drawdown_pct": -0.07196008925545172,
+          "sessions": 45,
+          "trades": 2,
+          "cost_paid": 5017.893458366287,
+          "mean_exposure_pct": 0.0,
+          "invested_sessions_pct": 0.0,
+          "turnover_initial_capital": 0.5017893458366286,
+          "excess_buy_hold_pp": 32.669845070661836,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.732528838594874,
+            221.82547948669057
+          ]
+        },
+        "sma": {
+          "return_pct": -30.67280452719421,
+          "annualized_return_pct": -87.14534757773008,
+          "sharpe_rf0": -1.427919873453004,
+          "max_drawdown_pct": -44.30060537738781,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 11942.681712059786,
+          "mean_exposure_pct": 53.33333333333334,
+          "invested_sessions_pct": 53.333333333333336,
+          "turnover_initial_capital": 1.1942681712059786,
+          "excess_buy_hold_pp": 2.069000632723082,
+          "mean_daily_log_excess_bps_ci95": [
+            -53.72081508414638,
+            59.78428052666216
+          ]
+        },
+        "macd": {
+          "return_pct": -9.520737965757387,
+          "annualized_return_pct": -42.894928640590024,
+          "sharpe_rf0": -2.549434147666508,
+          "max_drawdown_pct": -9.520737965757387,
+          "sessions": 45,
+          "trades": 4,
+          "cost_paid": 14960.982006699078,
+          "mean_exposure_pct": 20.0,
+          "invested_sessions_pct": 20.0,
+          "turnover_initial_capital": 1.4960982006699077,
+          "excess_buy_hold_pp": 23.221067194159904,
+          "mean_daily_log_excess_bps_ci95": [
+            -74.76880300439481,
+            203.41229036550615
+          ]
+        },
+        "rsi": {
+          "return_pct": -18.479249721494806,
+          "annualized_return_pct": -68.15056436580662,
+          "sharpe_rf0": -1.1735358818380306,
+          "max_drawdown_pct": -28.18868983091447,
+          "sessions": 45,
+          "trades": 1,
+          "cost_paid": 2487.562189054727,
+          "mean_exposure_pct": 63.11498706156304,
+          "invested_sessions_pct": 100.0,
+          "turnover_initial_capital": 0.24875621890547267,
+          "excess_buy_hold_pp": 14.262555438422485,
+          "mean_daily_log_excess_bps_ci95": [
+            -18.08484888848188,
+            105.46339821362322
+          ]
+        }
+      },
+      "input_sha256": {
+        "005930_bars.csv": "9697d6cba7aeefdc943c7522dd4443826d7c4033f68d40c387e368bc03834a15",
+        "000660_bars.csv": "6fc2c5c957705a60a120f611ceb5255f9fb4c0adc1a8f81bb9f7b460e00cc0db"
+      },
+      "capital_per_symbol": 1000000,
+      "cadence_sessions": 12
+    }
+  ]
+}

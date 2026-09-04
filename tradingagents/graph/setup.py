@@ -113,6 +113,7 @@ class GraphSetup:
                 preload_verified_snapshot=self.preload_verified_snapshot,
                 use_korean_evidence_reports=(self.enable_korean_evidence_agents and not self.korean_role_upgrade),
                 use_kronos_evidence_report=(self.enable_kronos_evidence_agent and not self.korean_role_upgrade),
+                market_only_snapshot=self.korean_role_upgrade,
             ),
             "social": lambda: (
                 create_korean_flow_sentiment_analyst(self.quick_thinking_llm)

@@ -125,6 +125,7 @@ def write_evidence_manifest(
         source_list.extend(
             [
                 "OpenDART 최근 공시",
+                "OpenDART 별도 정기보고서(재무 에이전트용)",
                 "KIS 종합 시황/공시 제목(종목 연관 헤드라인)",
                 "FRED 미국 매크로(금리·CPI·국채·달러·VIX)",
                 "한국은행 ECOS 보조 매크로",
@@ -133,6 +134,8 @@ def write_evidence_manifest(
         )
     if kronos_enabled:
         source_list.append("Kronos-base 시계열 예측(검증된 KIS 일봉 입력)")
+    if "## Japan monetary conditions" in snapshot:
+        source_list.extend(["BOJ 일본 익일물 콜 시장금리(정책금리 목표 아님)", "FRED 달러/엔·브렌트유", "GDELT 국제 분쟁 뉴스 제목·출처·최초 수집시각"])
     if account_enabled:
         source_list.append("KIS 국내주식 잔고조회(계좌번호 비식별 요약)")
     sources = "\n".join(f"- {item}" for item in source_list)
@@ -187,6 +190,7 @@ def main() -> None:
     parser.add_argument("--debug", action="store_true", help="Print LangGraph messages while running")
     parser.add_argument("--verbose", action="store_true", help="Print each agent's completed analysis and debate output")
     parser.add_argument("--enhanced", action="store_true", help="Require DART, FRED, ECOS, and KIS investor-flow evidence")
+    parser.add_argument("--global-risk", action="store_true", help="Require free GDELT conflict news, BOJ overnight rates and FRED yen/oil; API failure stops analysis")
     parser.add_argument(
         "--account-mode",
         choices=("required", "disabled"),
@@ -212,6 +216,8 @@ def main() -> None:
         help="Historical daily K-lines sent to Kronos (30-512, default: 40; paper daily protocol)",
     )
     args = parser.parse_args()
+    if args.global_risk and not args.enhanced:
+        parser.error("--global-risk requires --enhanced")
 
     if not args.symbol.isdigit() or len(args.symbol) != 6:
         parser.error("symbol must be a six-digit KRX code, for example 005930")
@@ -233,6 +239,7 @@ def main() -> None:
         )
 
     overrides = {
+        "enable_global_risk": args.global_risk,
         "kronos_mode": kronos_mode,
         "kronos_horizon": args.kronos_horizon,
         "kronos_lookback": args.kronos_lookback,
@@ -275,6 +282,8 @@ def main() -> None:
         except Exception as exc:  # noqa: BLE001 - enhanced mode is deliberately strict
             parser.exit(2, f"Enhanced evidence collection failed; analysis was not started: {exc}\n")
         print("[진행] 3/7 DART·KIS 헤드라인·미국/한국 매크로·KIS 수급 검증 완료", flush=True)
+        if args.global_risk:
+            print("[진행] 국제 분쟁 뉴스·BOJ 콜금리·달러/엔·브렌트유 수집 완료 (과거 공개시점 한계는 근거에 명시)", flush=True)
         if kronos_mode != "disabled":
             print("[진행] Kronos 예측 수신 및 시계열 근거 검증 완료", flush=True)
 

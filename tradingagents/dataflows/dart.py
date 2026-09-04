@@ -125,6 +125,51 @@ def disclosure_document(receipt_no: str) -> str:
     return "\n\n".join(documents)
 
 
+def periodic_fundamentals_context(stock_code: str, as_of: str) -> str:
+    """Select a periodic filing independently of the recent-disclosure quota.
+
+    Exclude the analysis date because list.json supplies dates, not intraday
+    publication times. Never use today's final-report flag in a past replay.
+    """
+    end = date.fromisoformat(as_of) - timedelta(days=1)
+    payload = _json(
+        "list.json", allow_no_data=True, corp_code=resolve_corp_code(stock_code),
+        bgn_de=(end - timedelta(days=550)).strftime("%Y%m%d"),
+        end_de=end.strftime("%Y%m%d"), pblntf_ty="A", last_reprt_at="N",
+        sort="date", sort_mth="desc", page_count=100,
+    )
+    if int(payload.get("total_page", 1)) > 1:
+        raise RuntimeError("DART periodic filing selection requires pagination; stopping rather than truncating")
+    rows = payload.get("list", [])
+    candidates = []
+    for row in rows:
+        submitted = date.fromisoformat(f"{row['rcept_dt'][:4]}-{row['rcept_dt'][4:6]}-{row['rcept_dt'][6:8]}")
+        if submitted > end:
+            raise ValueError("DART returned a future periodic filing")
+        match = re.search(r"\((\d{4})\.(\d{2})\)", row["report_nm"])
+        if not match:
+            raise ValueError("DART periodic report has no recognizable fiscal period")
+        period = (int(match[1]), int(match[2]))
+        if not 1 <= period[1] <= 12 or period > (end.year, end.month):
+            raise ValueError("Invalid DART fiscal period")
+        candidates.append((period, row["rcept_dt"], row["rcept_no"], row))
+    if not candidates:
+        raise RuntimeError("No periodic DART filing available; fundamentals collection stopped")
+    period, _, receipt, selected = max(candidates, key=lambda x: x[:3])
+    document = disclosure_document(receipt)
+    return "\n\n".join([
+        "## OpenDART periodic fundamentals (separate financial-report selection)",
+        f"- Analysis date: {as_of}; filing cutoff: {end}; fiscal period: {period[0]}-{period[1]:02d}",
+        f"- Selected report: {selected['report_nm']}; received: {selected['rcept_dt']}",
+        f"- Source: https://dart.fss.or.kr/dsaf001/main.do?rcpNo={receipt}",
+        "- Latest fiscal period, then latest submission within cutoff. Full extracted text, not a computed financial ratio feed.",
+        "- Preserve consolidated versus separate accounts, reporting periods and units. Do not infer missing figures. "
+        "Correction-only attachments may not contain complete statements; disclose this rather than assume completeness. "
+        "The API does not prove the original document was never revised after retrieval-date cutoff.",
+        document,
+    ])
+
+
 def disclosure_context(
     stock_code: str,
     as_of: str,

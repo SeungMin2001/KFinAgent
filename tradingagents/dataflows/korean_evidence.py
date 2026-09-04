@@ -6,8 +6,10 @@ from datetime import date, datetime, timedelta
 
 import pandas as pd
 
-from .dart import disclosure_context
+from .dart import disclosure_context, periodic_fundamentals_context
 from .ecos import korea_macro_context
+from .evidence_snapshot import read_snapshot
+from .global_risk import global_risk_context
 from .kis import KisInvestorFlowTimeWindowError, get_kis_investor_flow, get_kis_news_titles
 from .kronos import (
     PAPER_DAILY_HORIZON,
@@ -51,8 +53,8 @@ def evidence_for_domain(snapshot: str, domain: str) -> str:
     selectors = {
         "market": ("Verified market data snapshot", "Deterministic chart summary"),
         "disclosure": ("OpenDART disclosures", "KIS market/disclosure headline snapshot"),
-        "fundamentals": ("OpenDART disclosures",),
-        "macro": ("US macro snapshot", "FRED:", "Bank of Korea ECOS macro snapshot"),
+        "fundamentals": ("OpenDART disclosures", "OpenDART periodic fundamentals"),
+        "macro": ("US macro snapshot", "FRED:", "Bank of Korea ECOS macro snapshot", "Japan monetary conditions", "Geopolitical news evidence"),
         "flow": ("KIS investor flow snapshot",),
         "kronos": ("Kronos forecast snapshot",),
     }
@@ -306,6 +308,11 @@ def enhanced_korean_evidence(
                 limit=int(settings.get("korean_headline_limit", 20)),
             ),
         ]
+    if settings.get("enable_global_risk", False):
+        snapshot_dir = settings.get("global_risk_snapshot_dir")
+        sections.append(read_snapshot(snapshot_dir, as_of) if snapshot_dir else global_risk_context(as_of))
+    if settings.get("enable_periodic_fundamentals", True):
+        sections.append(periodic_fundamentals_context(symbol, as_of))
     kronos_mode = str(settings.get("kronos_mode", "disabled"))
     if kronos_mode != "disabled":
         if market_bars is None:

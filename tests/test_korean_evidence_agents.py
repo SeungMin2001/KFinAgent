@@ -120,12 +120,15 @@ def test_evidence_agent_does_not_fallback_to_unstructured_text():
 
 
 @pytest.mark.unit
-def test_long_disclosure_is_fully_chunked_then_synthesized():
+@pytest.mark.parametrize("domain", ["disclosure", "fundamentals"])
+def test_long_disclosure_is_fully_chunked_then_synthesized(domain):
     llm = _FakeLLM()
     body = "".join(f"line-{index:04d} detail\n" for index in range(300))
     snapshot = "## OpenDART disclosures (official metadata and original document text)\n" + body
 
-    create_disclosure_evidence_analyst(llm, max_chunk_chars=1_000)(
+    from tradingagents.agents.analysts.korean_evidence_analysts import create_korean_fundamentals_analyst
+    factory = create_disclosure_evidence_analyst if domain == "disclosure" else create_korean_fundamentals_analyst
+    factory(llm, max_chunk_chars=1_000)(
         {"trade_date": "2026-09-02", "verified_market_snapshot": snapshot}
     )
 

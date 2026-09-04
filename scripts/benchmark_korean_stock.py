@@ -13,16 +13,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv(ROOT / ".env")
 
-import pandas as pd
-import requests
+import pandas as pd  # noqa: E402
+import requests  # noqa: E402
 
-from tradingagents.benchmark import (
+from tradingagents.benchmark import (  # noqa: E402
     BASELINES,
     baseline_target,
+    decision_dates,
+    execution_action,
     rating_target,
     simulate,
     write_report,
@@ -54,15 +56,32 @@ def main():
         help="Explicitly reuse checksum-verified KIS bars from a previous run",
     )
     parser.add_argument("--max-agent-calls", type=int, default=120)
+    parser.add_argument("--global-risk-from", type=Path, help="Explicit directory of prepared dated real global snapshots; never falls back to live")
+    parser.add_argument("--allocation-policy", choices=["step", "binary"], default="step")
+    parser.add_argument(
+        "--initial-exposure",
+        type=float,
+        default=0,
+        help="Identical prior-close stock endowment for every strategy, 0..1",
+    )
+    parser.add_argument(
+        "--global-risk",
+        action="store_true",
+        help="Include free global-risk evidence in both Agent variants (exploratory, not strict PIT)",
+    )
     parser.add_argument(
         "--plan", action="store_true", help="No API calls; print intended experiment"
     )
     args = parser.parse_args()
+    if args.global_risk_from and not args.global_risk:
+        parser.error("--global-risk-from requires --global-risk")
     start, end = date.fromisoformat(args.start), date.fromisoformat(args.end)
     if start >= end or end >= date.today():
         parser.error("Use a completed historical period: start < end < today")
     if args.cadence < 1 or not 0 <= args.cost_bps < 10000:
         parser.error("cadence >=1 and cost-bps in [0,10000) required")
+    if not 0 <= args.initial_exposure <= 1:
+        parser.error("initial-exposure must be in [0,1]")
     if len(set(args.symbols)) != len(args.symbols) or any(
         len(s) != 6 or not s.isdigit() for s in args.symbols
     ):
@@ -77,6 +96,11 @@ def main():
         "cadence_sessions": args.cadence,
         "capital_per_symbol": 1_000_000,
         "model_override": args.model,
+        "global_risk": args.global_risk,
+        "global_risk_source": "frozen_snapshot" if args.global_risk_from else "live",
+        "allocation_policy": args.allocation_policy,
+        "initial_exposure": args.initial_exposure,
+        "periodic_fundamentals": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "git_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
@@ -91,12 +115,16 @@ def main():
             "Adjusted-price fractional units; no dividends, liquidity/limit-up queue or partial-fill simulation",
             "No live account; separate simulated account per strategy; no external prior-report memory",
             "Close-time decision, next available session open; zero-volume execution deferred",
-            "Buy/Overweight -> 100%; Hold -> maintain; Underweight/Sell -> 0%; REVIEW stops",
+            "Step sizing: Buy +50pp / Overweight +25pp / Underweight -25pp / Sell 0; binary optional; Hold preserves units; REVIEW stops",
             "Kronos: 40 candles ->12 weekdays, T=.6 top_p=.9 10 independent paths; KRX holidays not modeled by service",
             "Every strategy uses the same decision cadence; this is a controlled ablation, not optimized rule trading",
             "No winner selection or parameter tuning on this evaluation window; short pilot does not support superiority claims",
         ],
     }
+    if args.global_risk:
+        manifest["limitations"].append(
+            "Global-risk: BOJ overnight market rates are latest revisions, NOT policy targets or historical vintages; GDELT titles/first-seen times are incomplete and not verified event/publication times"
+        )
     if args.plan:
         estimate = len(pd.bdate_range(start, end)) // args.cadence + 1
         manifest["agent_graph_calls_upper_estimate"] = (
@@ -107,24 +135,34 @@ def main():
     output = ROOT / "artifacts" / "benchmarks" / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     output.mkdir(parents=True)
     manifest["source_sha256"] = {}
-    for source in (Path(__file__), ROOT / "tradingagents" / "benchmark.py"):
+    sources = [Path(__file__), *sorted((ROOT / "tradingagents").rglob("*.py"))]
+    for source in sources:
         content = source.read_text()
-        (output / source.name).write_text(content)
-        manifest["source_sha256"][source.name] = hashlib.sha256(content.encode()).hexdigest()
+        relative = source.relative_to(ROOT)
+        destination = output / "source" / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(content)
+        manifest["source_sha256"][str(relative)] = hashlib.sha256(content.encode()).hexdigest()
     (output / "manifest.json").write_text(
         json.dumps({**manifest, "status": "running"}, indent=2, ensure_ascii=False)
     )
     print(f"결과 디렉터리: {output}", flush=True)
     try:
         execute(args, strategies, manifest, output)
-    except Exception as exc:
+    except (Exception, KeyboardInterrupt) as exc:
         # Third-party exceptions can embed account URLs or auth data. Persist
         # only the exception class here; no partial leaderboard is produced.
-        (output / "FAILED.json").write_text(
-            json.dumps({"status": "failed", "error_type": type(exc).__name__})
-        )
+        failure = {"status": "failed", "error_type": type(exc).__name__}
+        response = getattr(exc, "response", None)
+        if response is not None:
+            from urllib.parse import urlparse
+            parsed = urlparse(response.url)
+            failure.update(http_status=response.status_code, provider=parsed.hostname, path=parsed.path)
+        (output / "FAILED.json").write_text(json.dumps(failure))
+        manifest.update(failure)
+        (output / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
         print(
-            f"평가 중단: {type(exc).__name__}. 부분 결과를 최종 성과로 집계하지 않았습니다.",
+            f"평가 중단: {json.dumps(failure)}. 부분 결과를 최종 성과로 집계하지 않았습니다.",
             file=sys.stderr,
         )
         raise SystemExit(2) from None
@@ -151,6 +189,8 @@ def execute(args, strategies, manifest, output):
     else:
         client = _default_client()
         client.session = PacedSession()
+    if source_manifest is not None and any(s.startswith("agents") for s in strategies):
+        _default_client().session = PacedSession()
     frames = {}
     for symbol in args.symbols:
         print(f"[수집] {symbol} 실제 KIS 캔들", flush=True)
@@ -185,6 +225,16 @@ def execute(args, strategies, manifest, output):
             flush=True,
         )
         raise ValueError("Agent budget cap exceeded")
+    if args.global_risk_from and any(s.startswith("agents") for s in strategies):
+        from tradingagents.dataflows.evidence_snapshot import read_snapshot
+        reference = next(iter(frames.values()))
+        dates = decision_dates(reference, args.start, args.end, args.cadence)
+        manifest["global_snapshot_sha256"] = {}
+        for stamp in dates:
+            day = str(stamp.date())
+            read_snapshot(args.global_risk_from, day)
+            path = args.global_risk_from / f"{day}.json"
+            manifest["global_snapshot_sha256"][day] = hashlib.sha256(path.read_bytes()).hexdigest()
     if any("kronos" in s for s in strategies):
         from tradingagents.dataflows.kronos import KronosSettings
 
@@ -221,10 +271,11 @@ def execute(args, strategies, manifest, output):
         sleeves, trade_rows = [], []
         for symbol, frame in frames.items():
 
-            def decide(history, account):
+            def decide(history, account, strategy=strategy, symbol=symbol):
                 as_of = str(history.index[-1].date())
                 if strategy in BASELINES:
-                    return baseline_target(strategy, history, account["target"])
+                    target = baseline_target(strategy, history, account["target"])
+                    return None if abs(target - account["target"]) < 1e-10 else target
                 print(f"[판단] {strategy} {symbol} {as_of}", flush=True)
                 key = (symbol, as_of)
                 if "kronos" in strategy and key not in forecasts:
@@ -241,11 +292,11 @@ def execute(args, strategies, manifest, output):
                     if match is None:
                         raise ValueError("Missing Kronos expected return")
                     return float(float(match[1]) > 2 * args.cost_bps / 100)
+                from tradingagents.dataflows.korean_evidence import enhanced_korean_evidence
                 from tradingagents.korea import (
                     create_korean_stock_graph,
                     verify_kis_data_access_with_bars,
                 )
-                from tradingagents.dataflows.korean_evidence import enhanced_korean_evidence
 
                 if key not in shared_evidence:
                     snapshot, bars = verify_kis_data_access_with_bars(symbol, as_of)
@@ -260,7 +311,8 @@ def execute(args, strategies, manifest, output):
                         symbol,
                         as_of,
                         snapshot,
-                        config={"kronos_mode": "disabled"},
+                        config={"kronos_mode": "disabled", "enable_global_risk": args.global_risk,
+                                "global_risk_snapshot_dir": args.global_risk_from},
                         market_bars=bars,
                     )
                     (output / f"{symbol}_{as_of}_evidence.md").write_text(shared_evidence[key])
@@ -281,34 +333,57 @@ def execute(args, strategies, manifest, output):
                         print(f"  [Agent] {stage}", flush=True)
 
                 graph = create_korean_stock_graph(overrides, progress_callback=progress)
-                state, signal = graph.propagate(
-                    symbol,
-                    as_of,
-                    verified_market_snapshot=snapshot,
-                    account_snapshot="SIMULATED benchmark account at decision close: "
-                    + json.dumps(account)
-                    + "; fractional adjusted units. Buy/Overweight enters full long; Hold maintains exposure; Underweight/Sell exits. No shorting.",
-                    historical_report_context="Benchmark isolated run: no external historical reports.",
+                sizing_rule = (
+                    "Buy increases exposure by 50 percentage points; Overweight by 25; "
+                    "Underweight reduces it by 25; Sell exits. Targets are clipped to [0%,100%]."
+                    if args.allocation_policy == "step"
+                    else "Buy/Overweight enters full long; Underweight/Sell exits."
                 )
+                from langchain_core.callbacks import get_usage_metadata_callback
+                with get_usage_metadata_callback() as usage:
+                    state, signal = graph.propagate(
+                        symbol,
+                        as_of,
+                        verified_market_snapshot=snapshot,
+                        account_snapshot="SIMULATED benchmark account at decision close: "
+                        + json.dumps(account)
+                        + "; fractional adjusted units. "
+                        + sizing_rule
+                        + " Hold places no order: WAIT if flat, HOLD_POSITION if invested. No shorting. "
+                        "Separate market outlook from executable account action. A bearish view while flat "
+                        "does not require shorting. Do not force trades or require all evidence to agree.",
+                        historical_report_context="Benchmark isolated run: no external historical reports.",
+                    )
                 graph.save_reports(state, symbol)
-                target = rating_target(signal, account["target"])
+                target = rating_target(signal, account["target"], args.allocation_policy)
                 (output / f"{strategy}_{symbol}_{as_of}_decision.json").write_text(
                     json.dumps(
                         {
                             "signal": signal,
                             "target": target,
+                            "execution_action": execution_action(account["target"], target),
+                            "allocation_policy": args.allocation_policy,
+                            "llm_usage_by_model": usage.usage_metadata,
                             "account": account,
                             "final_trade_decision": state["final_trade_decision"],
+                            "fundamentals_report": state.get("fundamentals_report", ""),
+                            "investment_plan": state.get("investment_plan", ""),
                             "snapshot_sha256": hashlib.sha256(snapshot.encode()).hexdigest(),
                         },
                         indent=2,
                         ensure_ascii=False,
                     )
                 )
-                return target
+                return None if abs(target - account["target"]) < 1e-10 else target
 
             curve, trades = simulate(
-                frame, args.start, args.end, decide, cost_bps=args.cost_bps, cadence=args.cadence
+                frame,
+                args.start,
+                args.end,
+                decide,
+                cost_bps=args.cost_bps,
+                cadence=args.cadence,
+                initial_exposure=args.initial_exposure,
             )
             curve.to_csv(output / f"{strategy}_{symbol}_equity.csv")
             sleeves.append(curve)

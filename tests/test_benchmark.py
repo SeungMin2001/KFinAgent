@@ -2,7 +2,76 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tradingagents.benchmark import simulate, metrics, rating_target
+from tradingagents.benchmark import metrics, rating_target, simulate
+
+
+def test_step_allocation_and_legacy_policy():
+    assert rating_target("Buy", 0) == 0.5
+    assert rating_target("Overweight", 0) == 0.25
+    assert rating_target("Underweight", 0.5) == 0.25
+    assert rating_target("Sell", 0.5) == 0
+    assert rating_target("Buy", 0.8) == 1
+    assert rating_target("Buy", 0, "binary") == 1
+    assert rating_target("Underweight", 0, "step") == 0
+
+
+def test_action_distinguishes_flat_wait_from_holding():
+    from tradingagents.benchmark import execution_action
+
+    assert execution_action(0, 0) == "WAIT"
+    assert execution_action(0.5, 0.5) == "HOLD_POSITION"
+    assert execution_action(0, 0.25) == "ENTER"
+    assert execution_action(0.5, 0.25) == "REDUCE"
+    assert execution_action(0.5, 0) == "EXIT"
+
+
+def test_no_order_preserves_units_and_reports_actual_exposure():
+    frame = bars()
+    frame.loc[frame.index[60]:, "close"] = 120.0
+    contexts = []
+
+    def hold(history, context):
+        contexts.append(context)
+        return None
+
+    curve, trades = simulate(
+        frame,
+        str(frame.index[60].date()),
+        str(frame.index[-1].date()),
+        hold,
+        initial_exposure=0.5,
+        cadence=1,
+    )
+    assert trades == []
+    assert curve.units.nunique() == 1
+    assert contexts[0]["target"] == pytest.approx(0.5)
+    assert contexts[0]["position_status"] == "INVESTED"
+    assert contexts[1]["target"] > 0.5
+    assert curve.equity.iloc[-1] == pytest.approx(500_000 + 500_000 / 110 * 120)
+
+
+def test_partial_entry_keeps_cash_and_hold_does_not_rebalance():
+    frame = bars()
+    count = 0
+
+    def decide(history, account):
+        nonlocal count
+        count += 1
+        return 0.25 if count == 1 else None
+
+    curve, trades = simulate(
+        frame,
+        str(frame.index[60].date()),
+        str(frame.index[-1].date()),
+        decide,
+        capital=1000,
+        cost_bps=100,
+        cadence=1,
+    )
+    assert len(trades) == 1
+    assert trades[0]["notional"] == 250
+    assert curve.cash.iloc[-1] == pytest.approx(747.5)
+    assert curve.units.nunique() == 1
 
 
 def bars():
@@ -53,6 +122,18 @@ def test_hold_stays_cash_and_review_stops():
     assert rating_target("Hold", 0) == 0
     with pytest.raises(ValueError, match="Untradeable"):
         rating_target("REVIEW", 0)
+
+
+def test_snapshot_dates_exactly_match_simulator_calls():
+    from tradingagents.benchmark import decision_dates
+    frame = bars()
+    start, end = str(frame.index[60].date()), str(frame.index[-1].date())
+    seen = []
+    def decide(history, account):
+        seen.append(history.index[-1])
+        return None
+    simulate(frame, start, end, decide, cadence=3)
+    assert decision_dates(frame, start, end, 3) == seen
 
 
 def test_drawdown_includes_initial_capital():

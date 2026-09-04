@@ -9,9 +9,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BASELINES = ("buy_hold", "sma", "macd", "rsi")
+BASELINES = ("buy_hold", "cash", "sma", "macd", "rsi")
 STRATEGY_LABELS = {
     "buy_hold": "매수 후 보유",
+    "cash": "현금 유지·기존 보유 청산",
     "sma": "SMA 20/60",
     "macd": "MACD",
     "rsi": "RSI 14",
@@ -42,6 +43,8 @@ def validate_bars(frame: pd.DataFrame) -> pd.DataFrame:
 
 def baseline_target(name: str, history: pd.DataFrame, current: float) -> float:
     close = history.close
+    if name == "cash":
+        return 0.0
     if name == "buy_hold":
         return 1.0
     if len(close) < 60:
@@ -60,7 +63,15 @@ def baseline_target(name: str, history: pd.DataFrame, current: float) -> float:
     raise ValueError(f"Unknown baseline: {name}")
 
 
-def rating_target(signal: str, current: float) -> float:
+def rating_target(signal: str, current: float, policy: str = "step") -> float:
+    if not np.isfinite(current) or not 0 <= current <= 1:
+        raise ValueError("Current exposure must be in [0,1]")
+    if policy not in {"step", "binary"}:
+        raise ValueError("Unknown allocation policy")
+    if policy == "step":
+        changes = {"buy": 0.5, "overweight": 0.25, "underweight": -0.25}
+        if signal.lower() in changes:
+            return float(np.clip(current + changes[signal.lower()], 0, 1))
     if signal.lower() in {"buy", "overweight"}:
         return 1.0
     if signal.lower() in {"sell", "underweight"}:
@@ -68,6 +79,24 @@ def rating_target(signal: str, current: float) -> float:
     if signal.lower() == "hold":
         return current
     raise ValueError(f"Untradeable agent signal: {signal!r}; benchmark stopped")
+
+
+def execution_action(current: float, target: float) -> str:
+    if np.isclose(current, target, atol=1e-10, rtol=0):
+        return "WAIT" if current <= 1e-10 else "HOLD_POSITION"
+    if target > current:
+        return "ENTER" if current <= 1e-10 else "ADD"
+    return "EXIT" if target <= 1e-10 else "REDUCE"
+
+
+def decision_dates(frame, start, end, cadence=12):
+    """The actual pre-close dates required by simulate, not calendar estimates."""
+    if cadence < 1:
+        raise ValueError("Cadence must be positive")
+    indices = [i for i, d in enumerate(frame.index) if start <= d.strftime("%Y-%m-%d") <= end]
+    if len(indices) < 2 or indices[0] < 60:
+        raise ValueError("Need >=2 evaluation sessions and >=60 prior warm-up sessions")
+    return [frame.index[i] for i in [indices[0] - 1, *indices[cadence - 1:-1:cadence]]]
 
 
 def simulate(
@@ -79,6 +108,7 @@ def simulate(
     capital=1_000_000.0,
     cost_bps=10.0,
     cadence=12,
+    initial_exposure=0.0,
 ):
     """Decision after t close, execution at next observed session open.
 
@@ -91,7 +121,13 @@ def simulate(
     indices = [i for i, day in enumerate(frame.index) if start <= day.strftime("%Y-%m-%d") <= end]
     if len(indices) < 2 or indices[0] < 60:
         raise ValueError("Need >=2 evaluation sessions and >=60 prior warm-up sessions")
-    cash, units, pending, prior_target = capital, 0.0, None, 0.0
+    if not np.isfinite(initial_exposure) or not 0 <= initial_exposure <= 1:
+        raise ValueError("Initial exposure must be in [0,1]")
+    # An initial endowment marked at the prior close, not a free simulated fill.
+    # Every strategy gets the same endowment; entry cost predates evaluation.
+    cash = capital * (1 - initial_exposure)
+    units = capital * initial_exposure / frame.close.iloc[indices[0] - 1]
+    pending = None
     records, orders = [], []
     # All strategies make their first decision on the previous session close.
     decision_indices = {indices[0] - 1} | set(indices[cadence - 1 : -1 : cadence])
@@ -120,7 +156,6 @@ def simulate(
                             "notional": float(notional),
                         }
                     )
-                prior_target = pending
                 pending = None
             equity = cash + units * row.close
             records.append(
@@ -139,9 +174,15 @@ def simulate(
                 "cash": float(cash),
                 "units": float(units),
                 "equity": float(cash + units * row.close),
-                "target": prior_target,
+                "target": float(units * row.close / (cash + units * row.close)),
+                "position_status": "FLAT" if units <= 1e-10 else "INVESTED",
             }
-            pending = float(decide(history, context))
+            requested = decide(history, context)
+            # None is a true no-order decision: keep units, not a stale weight.
+            if requested is None:
+                pending = None
+                continue
+            pending = float(requested)
             if not np.isfinite(pending) or not 0 <= pending <= 1:
                 raise ValueError("Strategy target must be finite and in [0,1]")
     return pd.DataFrame(records).set_index("date"), orders
@@ -191,6 +232,13 @@ def write_report(
         summary[name]["trades"] = len(trades[name])
         summary[name]["cost_paid"] = sum(t["cost"] for t in trades[name])
         summary[name]["mean_exposure_pct"] = float(curve.exposure.mean() * 100)
+        summary[name]["invested_sessions_pct"] = float((curve.exposure > 1e-10).mean() * 100)
+        summary[name]["turnover_initial_capital"] = (
+            sum(t["notional"] for t in trades[name]) / capital
+        )
+        summary[name]["excess_buy_hold_pp"] = (
+            summary[name]["return_pct"] - metrics(curves["buy_hold"].equity, capital)["return_pct"]
+        )
         summary[name]["mean_daily_log_excess_bps_ci95"] = excess_interval(
             curve.equity, curves["buy_hold"].equity, capital
         )
@@ -198,7 +246,16 @@ def write_report(
     (directory / "metrics.json").write_text(json.dumps(summary, indent=2, allow_nan=False))
     (directory / "trades.json").write_text(json.dumps(trades, indent=2, allow_nan=False))
     (directory / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    palette = ["#64748b", "#2563eb", "#16a34a", "#d97706", "#9333ea", "#0891b2", "#dc2626"]
+    palette = [
+        "#64748b",
+        "#2563eb",
+        "#16a34a",
+        "#d97706",
+        "#9333ea",
+        "#0891b2",
+        "#dc2626",
+        "#be185d",
+    ]
 
     def chart(drawdown=False):
         arrays = {}
@@ -223,7 +280,7 @@ def write_report(
                 for i, v in enumerate(a)
             )
             lines.append(
-                f'<polyline fill="none" stroke="{palette[j]}" stroke-width="2" points="{points}"><title>{html.escape(name)}</title></polyline>'
+                f'<polyline fill="none" stroke="{palette[j % len(palette)]}" stroke-width="2" points="{points}"><title>{html.escape(name)}</title></polyline>'
             )
         dates = next(iter(curves.values())).index
         lines.append(f'<text x="60" y="265" font-size="12">{html.escape(str(dates[0]))}</text>')
@@ -233,7 +290,7 @@ def write_report(
         for j, name in enumerate(curves):
             lx, ly = 60 + (j % 4) * 215, 295 + (j // 4) * 25
             lines.append(
-                f'<line x1="{lx}" y1="{ly}" x2="{lx + 20}" y2="{ly}" stroke="{palette[j]}" stroke-width="2"/><text x="{lx + 26}" y="{ly + 4}" font-size="12">{html.escape(name)}</text>'
+                f'<line x1="{lx}" y1="{ly}" x2="{lx + 20}" y2="{ly}" stroke="{palette[j % len(palette)]}" stroke-width="2"/><text x="{lx + 26}" y="{ly + 4}" font-size="12">{html.escape(name)}</text>'
             )
         return (
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 345" role="img"><rect width="960" height="345" fill="white"/>'
