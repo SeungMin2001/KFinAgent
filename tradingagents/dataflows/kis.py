@@ -431,7 +431,24 @@ class KisClient:
             )
             if response.status_code == 429:
                 raise VendorRateLimitError("KIS account-balance API rate-limited the request.")
-            response.raise_for_status()
+            if response.status_code >= 400:
+                # Do not call ``raise_for_status`` here: its message embeds the
+                # complete request URL, including the account number (CANO).
+                # Account-aware research must never leak that identifier into a
+                # terminal transcript or report.
+                try:
+                    error_payload = response.json()
+                except ValueError:
+                    error_payload = {}
+                if isinstance(error_payload, dict):
+                    detail = " ".join(
+                        str(error_payload.get(key, "")).strip()
+                        for key in ("msg_cd", "msg1")
+                    ).strip()
+                else:
+                    detail = ""
+                suffix = f": {detail}" if detail else ""
+                raise RuntimeError(f"KIS account-balance API returned HTTP {response.status_code}{suffix}")
             payload = response.json()
             if payload.get("rt_cd") != "0":
                 raise RuntimeError(
@@ -446,10 +463,16 @@ class KisClient:
             if totals is None:
                 totals = page_totals[0]
 
+            # KIS includes context fields even on a final page.  The response
+            # header is the authoritative continuation signal; treating a
+            # non-empty context field as a signal caused an unnecessary second
+            # request and a real-account HTTP 500.
+            if response.headers.get("tr_cont", "").strip() != "M":
+                break
             foreign_key = str(payload.get("ctx_area_fk100", "")).strip()
             next_key = str(payload.get("ctx_area_nk100", "")).strip()
             if not foreign_key and not next_key:
-                break
+                raise RuntimeError("KIS account-balance response requested continuation without context keys.")
         else:
             raise RuntimeError("KIS account-balance pagination exceeded 50 pages.")
 

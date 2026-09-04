@@ -204,6 +204,29 @@ def test_account_snapshot_includes_held_target_position(monkeypatch):
     assert "average cost / current price: 70,000 / 72,000 KRW" in snapshot
 
 
+def test_account_balance_uses_header_not_context_fields_for_pagination(monkeypatch):
+    monkeypatch.setenv("KIS_CANO", "12345678")
+    monkeypatch.setenv("KIS_ACNT_PRDT_CD", "01")
+    session = FakeSession()
+    calls = []
+
+    def balance_get(*_args, **kwargs):
+        calls.append(kwargs)
+        # These values may be populated even when KIS has no following page.
+        return FakeResponse(
+            {
+                "rt_cd": "0", "output1": [],
+                "output2": [{"tot_evlu_amt": "0", "dnca_tot_amt": "0", "scts_evlu_amt": "0"}],
+                "ctx_area_fk100": "12345678^01^N", "ctx_area_nk100": "continuation-key",
+            }
+        )
+
+    session.get = balance_get
+    KisClient(KisSettings("key", "secret", base_url="https://example.test"), session=session).account_snapshot("005930")
+
+    assert len(calls) == 1
+
+
 def test_propagator_keeps_account_snapshot_in_agent_state():
     state = Propagator().create_initial_state(
         "005930",
