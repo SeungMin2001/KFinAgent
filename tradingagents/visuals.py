@@ -140,11 +140,8 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
             [f"{x(len(closes) - 1, total_points):.1f},{history_y[-1]:.1f}"]
             + [f"{x(len(closes) + i, total_points):.1f},{forecast_y[i]:.1f}" for i in range(len(forecasts))]
         )
-    bar_width = max(2, plot_width / max(total_points, 1) * 0.62)
-    volume_rects = "".join(
-        f'<rect x="{x(i, total_points) - bar_width / 2:.1f}" y="{observed_volume_y[i]:.1f}" width="{bar_width:.1f}" '
-        f'height="{volume_bottom - observed_volume_y[i]:.1f}" fill="#7ba7d9" opacity="0.82"/>'
-        for i in range(len(volumes))
+    volume_history_points = " ".join(
+        f"{x(i, total_points):.1f},{observed_volume_y[i]:.1f}" for i in range(len(volumes))
     )
     forecast_volume_points = ""
     if forecast_volumes:
@@ -154,22 +151,6 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
                 f"{x(len(closes) + i, total_points):.1f},{forecast_volume_y[i]:.1f}"
                 for i in range(len(forecast_volumes))
             ]
-        )
-    forecast_volume_dots = "".join(
-        f'<circle cx="{x(len(closes) + index, total_points):.1f}" cy="{forecast_volume_y[index]:.1f}" '
-        'r="3.5" class="forecast-volume-dot"/>'
-        for index in range(len(forecast_volumes))
-    )
-    forecast_band = ""
-    if forecasts and p10 is not None and p90 is not None:
-        last_close = closes[-1]
-        final_x = x(total_points - 1, total_points)
-        band_values = [last_close * (1 + p10 / 100), last_close * (1 + p90 / 100)]
-        band_y = [price_y(value) for value in band_values]
-        forecast_band = (
-            f'<line x1="{final_x:.1f}" y1="{band_y[0]:.1f}" x2="{final_x:.1f}" y2="{band_y[1]:.1f}" '
-            'stroke="#e16a5b" stroke-width="8" opacity="0.65"/>'
-            f'<text x="{final_x - 10:.1f}" y="{min(band_y) - 10:.1f}" text-anchor="end" class="annotation">p10–p90 range</text>'
         )
     date_label_items = [(0, dates.iloc[0]), (len(closes) // 2, dates.iloc[len(closes) // 2]), (len(closes) - 1, dates.iloc[-1])]
     if forecasts:
@@ -192,34 +173,24 @@ def write_market_overview_svg(output_dir: Path, market_bars: pd.DataFrame, snaps
         f'<text x="{left - 12}" y="{price_y(tick) + 4:.1f}" text-anchor="end" class="axis-label">{tick:,.0f}</text>'
         for tick in price_ticks
     )
-    future_dots = "".join(
-        f'<circle cx="{x(len(closes) + index, total_points):.1f}" cy="{forecast_y[index]:.1f}" r="4.5" class="forecast-dot"/>'
-        for index in range(len(forecasts))
-    )
-    last_close = closes[-1]
-    final_forecast = forecast_values[-1] if forecast_values else None
-    final_return = (final_forecast / last_close - 1) * 100 if final_forecast is not None else None
-    actual_label = f"Observed {last_close:,.0f}"
-    forecast_label = "No forecast returned" if final_forecast is None else f"Median {final_forecast:,.0f} KRW  ({final_return:+.2f}%)"
-    latest_x = x(len(closes) - 1, total_points)
-    latest_y = history_y[-1]
-    final_x = x(total_points - 1, total_points) if forecasts else latest_x
-    final_y = forecast_y[-1] if forecasts else latest_y
     target.write_text(
-        f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="KIS historical price and Kronos forecast chart">
-<title>KIS historical close and volume with Kronos forecast</title><desc>Observed KIS closing prices are black and observed KIS volumes are blue bars. Dashed red lines are Kronos median close and median volume forecasts after the cut-off. The red vertical mark is the p10 to p90 close-return range at the final forecast day.</desc>
-<style>.bg{{fill:#ffffff}}.title{{font:600 22px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#1a1a1a}}.subtitle{{font:13px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#5b6570}}.panel{{font:600 14px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#1a1a1a}}.axis-label{{font:12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#5b6570}}.annotation{{font:600 12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#a63e33}}.window-label{{font:600 11px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;fill:#ad6257;letter-spacing:1px}}.grid{{stroke:#e2e5e8;stroke-width:1}}.divider{{stroke:#bfc5ca;stroke-width:1}}.cutoff{{stroke:#606870;stroke-width:1.1;stroke-dasharray:4 4}}.forecast-window{{fill:#fcf5f2}}.hist{{fill:none;stroke:#2b2b2b;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}}.forecast{{fill:none;stroke:#c64e3b;stroke-width:2.7;stroke-dasharray:7 4;stroke-linecap:round;stroke-linejoin:round}}.forecast-volume{{fill:none;stroke:#c64e3b;stroke-width:2.3;stroke-dasharray:6 4;stroke-linecap:round;stroke-linejoin:round}}.actual-dot{{fill:#2b2b2b;stroke:#ffffff;stroke-width:2}}.forecast-dot{{fill:#c64e3b;stroke:#ffffff;stroke-width:2}}.forecast-volume-dot{{fill:#c64e3b;stroke:#ffffff;stroke-width:1.5}}</style>
+        f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-label="KIS historical close and volume with Kronos forecast chart">
+<title>Kronos-style KIS close and volume forecast</title><desc>In the style of the official Kronos example: blue solid lines are observed KIS close and volume, and red solid lines are the Kronos median forecasts after the input cut-off.</desc>
+<style>.bg{{fill:#ffffff}}.title{{font:18px DejaVu Sans,Arial,sans-serif;fill:#111}}.axis-label{{font:12px DejaVu Sans,Arial,sans-serif;fill:#333}}.tick{{font:11px DejaVu Sans,Arial,sans-serif;fill:#333}}.legend{{font:12px DejaVu Sans,Arial,sans-serif;fill:#222}}.grid{{stroke:#b0b0b0;stroke-width:.8;stroke-dasharray:2 2;opacity:.7}}.divider{{stroke:#333;stroke-width:1}}.cutoff{{stroke:#777;stroke-width:1;stroke-dasharray:4 3}}.forecast-window{{fill:#ffffff}}.window-label{{font:11px DejaVu Sans,Arial,sans-serif;fill:#555}}.hist{{fill:none;stroke:#1f77b4;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}}.forecast{{fill:none;stroke:#d62728;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}}.forecast-volume{{fill:none;stroke:#d62728;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}}</style>
 <rect width="{width}" height="{height}" class="bg"/>
-<text x="{left}" y="32" class="title">Kronos forecast for KIS closing price</text>
-<text x="{left}" y="55" class="subtitle">Input ends {html.escape(dates.iloc[-1].strftime('%Y-%m-%d'))}; forecast horizon = {len(forecasts)} trading days. Prices in KRW.</text>
-<text x="{left}" y="92" class="panel">A  |  Observed close and probabilistic forecast</text><text x="{width-right}" y="92" text-anchor="end" class="axis-label">black: observed KIS close · red dashed: Kronos median · red bar: final p10–p90</text>
-{price_grid}{cutoff_marker}<polyline points="{history_points}" class="hist"/><polyline points="{forecast_points}" class="forecast"/>{forecast_band}{future_dots}
-<circle cx="{latest_x:.1f}" cy="{latest_y:.1f}" r="5" class="actual-dot"/><text x="{latest_x - 10:.1f}" y="{latest_y - 12:.1f}" text-anchor="end" class="annotation">{html.escape(actual_label)}</text>
-<circle cx="{final_x:.1f}" cy="{final_y:.1f}" r="5" class="forecast-dot"/><text x="{final_x - 10:.1f}" y="{final_y + 22:.1f}" text-anchor="end" class="annotation">{html.escape(forecast_label)}</text>
+<text x="{left}" y="35" class="title">Kronos Prediction — KIS daily candles</text>
+<text x="{left}" y="58" class="axis-label">Close Price (KRW)</text>
+{price_grid}{cutoff_marker}<polyline points="{history_points}" class="hist"/><polyline points="{forecast_points}" class="forecast"/>
+<line x1="{left + 14}" y1="{price_bottom - 38}" x2="{left + 42}" y2="{price_bottom - 38}" class="hist"/><text x="{left + 50}" y="{price_bottom - 34}" class="legend">Ground Truth (KIS)</text>
+<line x1="{left + 14}" y1="{price_bottom - 18}" x2="{left + 42}" y2="{price_bottom - 18}" class="forecast"/><text x="{left + 50}" y="{price_bottom - 14}" class="legend">Prediction (Kronos median)</text>
 <line x1="{left}" y1="{price_bottom}" x2="{width-right}" y2="{price_bottom}" class="divider"/>
-<text x="{left}" y="510" class="panel">B  |  Observed and forecast daily trading volume</text><text x="{width-right}" y="510" text-anchor="end" class="axis-label">blue bars: observed KIS volume · red dashed: Kronos median forecast</text>
-<line x1="{left}" y1="{volume_bottom}" x2="{width-right}" y2="{volume_bottom}" class="divider"/>{volume_rects}<polyline points="{forecast_volume_points}" class="forecast-volume"/>{forecast_volume_dots}
-{date_labels}<text x="{left}" y="706" class="subtitle">The p10–p90 mark applies only to the final close return. Volume is a median path only; this API returns no volume uncertainty interval.</text></svg>''',
+<text x="{left}" y="486" class="axis-label">Volume</text>
+<line x1="{left}" y1="{volume_top}" x2="{width-right}" y2="{volume_top}" class="grid"/><line x1="{left}" y1="{(volume_top + volume_bottom) / 2:.1f}" x2="{width-right}" y2="{(volume_top + volume_bottom) / 2:.1f}" class="grid"/>
+<polyline points="{volume_history_points}" class="hist"/><polyline points="{forecast_volume_points}" class="forecast-volume"/>
+<line x1="{left + 14}" y1="{volume_top + 22}" x2="{left + 42}" y2="{volume_top + 22}" class="hist"/><text x="{left + 50}" y="{volume_top + 26}" class="legend">Ground Truth (KIS)</text>
+<line x1="{left + 14}" y1="{volume_top + 42}" x2="{left + 42}" y2="{volume_top + 42}" class="forecast"/><text x="{left + 50}" y="{volume_top + 46}" class="legend">Prediction (Kronos median)</text>
+<line x1="{left}" y1="{volume_bottom}" x2="{width-right}" y2="{volume_bottom}" class="divider"/>
+{date_labels}<text x="{left}" y="706" class="tick">Blue: verified KIS observations · Red: Kronos median forecast · vertical line: input cut-off. Price uncertainty and volume uncertainty remain in the evidence table.</text></svg>''',
         encoding="utf-8",
     )
     return target

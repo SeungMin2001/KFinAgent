@@ -26,10 +26,11 @@ def test_visual_summary_and_svg_use_verified_bars(tmp_path):
     assert "Latest close: 139.00" in summary
     assert path.name == "market_overview.svg"
     chart = path.read_text(encoding="utf-8")
-    assert "Kronos median forecast" in chart
-    assert "Observed and forecast daily trading volume" in chart
+    assert "Kronos Prediction" in chart
+    assert "Ground Truth (KIS)" in chart
+    assert "Prediction (Kronos median)" in chart
     assert "class=\"forecast-volume\"" in chart
-    assert "Volume is a median path only" in chart
+    assert "vertical line: input cut-off" in chart
     assert "FORECAST WINDOW" in chart
     assert ">Feb 25</text>" in chart
     assert ">Feb 27</text>" in chart
