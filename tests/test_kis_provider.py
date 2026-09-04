@@ -133,6 +133,86 @@ def test_propagator_keeps_the_preverified_snapshot_in_agent_state():
     assert state["verified_market_snapshot"] == "verified KIS snapshot"
 
 
+def test_account_snapshot_is_redacted_and_marks_unheld_target(monkeypatch):
+    monkeypatch.setenv("KIS_CANO", "12345678")
+    monkeypatch.setenv("KIS_ACNT_PRDT_CD", "01")
+    session = FakeSession()
+    balance_calls = []
+
+    def balance_get(*_args, **kwargs):
+        balance_calls.append(kwargs)
+        return FakeResponse(
+        {
+            "rt_cd": "0",
+            "output1": [
+                {
+                    "pdno": "000660",
+                    "hldg_qty": "3",
+                    "evlu_amt": "600000",
+                    "pchs_avg_pric": "190000",
+                    "prpr": "200000",
+                    "evlu_pfls_amt": "30000",
+                    "evlu_pfls_rt": "5.26",
+                }
+            ],
+            "output2": [{"tot_evlu_amt": "1000000", "dnca_tot_amt": "400000", "scts_evlu_amt": "600000"}],
+            "ctx_area_fk100": "",
+            "ctx_area_nk100": "",
+        }
+    )
+    session.get = balance_get
+    client = KisClient(KisSettings("key", "secret", base_url="https://example.test"), session=session)
+
+    snapshot = client.account_snapshot("005930")
+
+    assert "12345678" not in snapshot
+    assert "Target 005930 current holding: 0 shares (not held)" in snapshot
+    assert "Watch/No entry" in snapshot
+    assert balance_calls[0]["headers"]["tr_id"] == "TTTC8434R"
+
+
+def test_account_snapshot_includes_held_target_position(monkeypatch):
+    monkeypatch.setenv("KIS_CANO", "12345678")
+    monkeypatch.setenv("KIS_ACNT_PRDT_CD", "01")
+    session = FakeSession()
+    session.get = lambda *_args, **_kwargs: FakeResponse(
+        {
+            "rt_cd": "0",
+            "output1": [
+                {
+                    "pdno": "005930",
+                    "hldg_qty": "10",
+                    "evlu_amt": "720000",
+                    "pchs_avg_pric": "70000",
+                    "prpr": "72000",
+                    "evlu_pfls_amt": "20000",
+                    "evlu_pfls_rt": "2.86",
+                }
+            ],
+            "output2": [{"tot_evlu_amt": "1200000", "dnca_tot_amt": "480000", "scts_evlu_amt": "720000"}],
+            "ctx_area_fk100": "",
+            "ctx_area_nk100": "",
+        }
+    )
+    client = KisClient(KisSettings("key", "secret", base_url="https://example.test"), session=session)
+
+    snapshot = client.account_snapshot("005930")
+
+    assert "Target 005930 current holding: 10 shares" in snapshot
+    assert "720,000 KRW / 60.00%" in snapshot
+    assert "average cost / current price: 70,000 / 72,000 KRW" in snapshot
+
+
+def test_propagator_keeps_account_snapshot_in_agent_state():
+    state = Propagator().create_initial_state(
+        "005930",
+        "2026-09-04",
+        account_snapshot="Target 005930 current holding: 0 shares (not held)",
+    )
+
+    assert state["account_snapshot"].endswith("(not held)")
+
+
 def test_verified_snapshot_uses_kis_when_kis_vendor_is_selected(monkeypatch):
     from tradingagents.dataflows import kis, market_data_validator
 

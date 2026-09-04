@@ -50,6 +50,7 @@ class AgentState(MessagesState):
     instrument_context: Annotated[str, "Deterministic ticker identity resolved at run start"]
     trade_date: Annotated[str, "What date we are trading at"]
     verified_market_snapshot: Annotated[str, "Live market snapshot verified before the agent workflow starts"]
+    account_snapshot: Annotated[str, "Read-only live account context, redacted before LLM use"]
     disclosure_report: Annotated[str, "Objective report from the Disclosure Evidence Analyst"]
     macro_report: Annotated[str, "Objective report from the Macro Evidence Analyst"]
     flow_report: Annotated[str, "Objective report from the Flow Evidence Analyst"]

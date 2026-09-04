@@ -37,14 +37,17 @@ def create_research_manager(llm):
 
 {instrument_context}
 
+**Read-only Account Context (mandatory action constraint):**
+{state.get('account_snapshot', '')}
+
 ---
 
 **Rating Scale** (use exactly one):
 - **Buy**: Strong conviction in the bull thesis; recommend taking or growing the position
 - **Overweight**: Constructive view; recommend gradually increasing exposure
-- **Hold**: Balanced view; recommend maintaining the current position
-- **Underweight**: Cautious view; recommend trimming exposure
-- **Sell**: Strong conviction in the bear thesis; recommend exiting or avoiding the position
+- **Hold**: Balanced view; recommend maintaining the current position; if the target is not held, label this Watch / No entry rather than Hold
+- **Underweight**: Cautious view; recommend trimming exposure; if the target is not held, label this Avoid / No entry rather than Underweight
+- **Sell**: Strong conviction in the bear thesis; recommend exiting; if the target is not held, label this Avoid / No entry rather than Sell
 
 Commit to a directional stance only when the debate's strongest arguments clearly warrant one. Choose Hold when the evidence is balanced, materially conflicting, ambiguous, or insufficient to justify changing exposure; do not manufacture a direction merely to appear decisive. Weigh the bull and bear cases on their merits, independent of which side spoke first or last.
 

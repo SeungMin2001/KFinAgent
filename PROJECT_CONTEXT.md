@@ -79,6 +79,9 @@ bash scripts/bootstrap_local_env.sh
 KIS_APP_KEY=
 KIS_APP_SECRET=
 KIS_ENV=real
+# Read-only domestic-stock balance lookup; never commit these values.
+KIS_CANO=
+KIS_ACNT_PRDT_CD=
 OPENAI_API_KEY=
 DART_API_KEY=
 ECOS_API_KEY=
@@ -96,6 +99,7 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 
 - Kubernetes는 지금 사용하지 않는다. 1차 배포는 **Docker + RunPod 지속 GPU Pod + FastAPI**다.
 - Kronos는 최종 매매 신호가 아니라 확률적 보조 근거다.
+- 계좌 인지 실행은 KIS 잔고조회만 사용한다. 계좌번호를 제외한 보유 수량·평단·현금·평가금액 요약은 모든 에이전트에 전달되며, 주문 API는 연결하지 않는다. 보유 0주면 `Hold`를 실제 보유 유지로 해석하지 않고 `Watch / No entry`로 표시한다.
 - Kronos 선택은 `--kronos`/`--require-kronos` 두 옵션으로 중복시키지 않고 `--kronos-mode {disabled,local,remote}` 하나로 제공한다.
 - `local` 또는 `remote`를 사용자가 명시하면 Kronos 실패 시 조용히 제외하지 않고 전체 분석을 중단한다. 기본값은 `disabled`다.
 - `local`은 로컬 HTTP API, `remote`는 RunPod 등 HTTPS API다. 두 모드 모두 API 키 인증을 사용한다.

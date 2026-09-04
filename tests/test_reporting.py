@@ -40,6 +40,16 @@ def test_write_report_tree_creates_files(tmp_path):
 
 
 @pytest.mark.unit
+def test_write_report_tree_includes_read_only_account_context(tmp_path):
+    state = {"account_snapshot": "Target 005930 current holding: 0 shares (not held)"}
+
+    path = write_report_tree(state, "005930", tmp_path)
+
+    assert (tmp_path / "0_account" / "context.md").read_text() == state["account_snapshot"]
+    assert "Read-only Account Context" in path.read_text()
+
+
+@pytest.mark.unit
 def test_save_reports_explicit_path(tmp_path):
     # Unbound: with an explicit save_path, the method doesn't touch self/config.
     out = TradingAgentsGraph.save_reports(None, _state(), "AAPL", save_path=tmp_path)

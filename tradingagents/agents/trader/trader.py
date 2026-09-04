@@ -25,6 +25,7 @@ def create_trader(llm):
         company_name = state["company_of_interest"]
         instrument_context = get_instrument_context_from_state(state)
         investment_plan = state["investment_plan"]
+        account_snapshot = state.get("account_snapshot", "")
         # The research plan digests the debate but loses exact price structure;
         # give the Trader the technical market report so entry/stop levels are
         # grounded in real ATR / support-resistance / current price (#1167). The
@@ -59,9 +60,12 @@ def create_trader(llm):
                 "content": (
                     f"Here is the research team's investment plan for {company_name}. "
                     f"{instrument_context}\n\n"
+                    f"Read-only account context (mandatory action constraint):\n{account_snapshot}\n\n"
                     f"{report_section}"
                     f"Proposed Investment Plan:\n{investment_plan}\n\n"
-                    f"Make an informed, strategic trading decision."
+                    "Make an informed, strategic trading decision. If the target holding is zero, "
+                    "never describe Hold/Sell/Underweight as maintaining or reducing this target; state "
+                    "the action is Watch/No entry when no justified Buy exists."
                 ),
             },
         ]

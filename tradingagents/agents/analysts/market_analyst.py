@@ -20,6 +20,7 @@ def create_market_analyst(
     def market_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = get_instrument_context_from_state(state)
+        account_snapshot = state.get("account_snapshot", "")
 
         # The Korean KIS workflow preloads this deterministically before the
         # LLM sees the task.  That makes a live market-data failure fatal rather
@@ -133,6 +134,7 @@ Write a very detailed and nuanced report of the trends you observe. Provide spec
                     " prefix your response with FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL** so the team knows to stop."
                     " You have access to the following tools: {tool_names}."
                     " Today's date is {current_date}; treat it as 'now' for all analysis and tool-call date ranges. {instrument_context}\n"
+                    "Read-only account context (apply the target-position constraint; this is not an order):\n{account_snapshot}\n"
                     "{verified_snapshot}\n"
                     "{system_message}",
                 ),
@@ -144,6 +146,7 @@ Write a very detailed and nuanced report of the trends you observe. Provide spec
         prompt = prompt.partial(tool_names=", ".join([tool.name for tool in tools]))
         prompt = prompt.partial(current_date=current_date)
         prompt = prompt.partial(instrument_context=instrument_context)
+        prompt = prompt.partial(account_snapshot=account_snapshot)
         prompt = prompt.partial(verified_snapshot=verified_snapshot)
 
         chain = prompt | (llm.bind_tools(tools) if tools else llm)

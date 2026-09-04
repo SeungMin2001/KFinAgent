@@ -23,6 +23,7 @@ class Propagator:
         past_context: str = "",
         instrument_context: str = "",
         verified_market_snapshot: str = "",
+        account_snapshot: str = "",
     ) -> dict[str, Any]:
         """Create the initial state for the agent graph.
 
@@ -39,6 +40,7 @@ class Propagator:
             "instrument_context": instrument_context,
             "trade_date": str(trade_date),
             "verified_market_snapshot": verified_market_snapshot,
+            "account_snapshot": account_snapshot,
             "disclosure_report": "",
             "macro_report": "",
             "flow_report": "",

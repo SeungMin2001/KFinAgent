@@ -1,8 +1,8 @@
-"""Korea Investment & Securities (KIS) market-data provider.
+"""Read-only Korea Investment & Securities (KIS) data provider.
 
-This module deliberately exposes *quotation* endpoints only.  It cannot place
-orders or read account balances, so wiring it into an agent does not grant the
-agent trading authority.
+The client can read quotations, investor flows, and a domestic-stock account
+balance.  It deliberately has no order endpoint: connecting an account lets
+the research workflow reason about current exposure, but never trade.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ import requests
 from .errors import NoMarketDataError, VendorNotConfiguredError, VendorRateLimitError
 
 _DOMESTIC_DAILY_PATH = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
+_DOMESTIC_BALANCE_PATH = "/uapi/domestic-stock/v1/trading/inquire-balance"
 _TOKEN_PATH = "/oauth2/tokenP"
 _DOMESTIC_CODE = re.compile(r"^\d{6}$")
 
@@ -62,6 +63,29 @@ class KisSettings:
         if self.environment == "demo":
             return "https://openapivts.koreainvestment.com:29443"
         return "https://openapi.koreainvestment.com:9443"
+
+
+@dataclass(frozen=True)
+class KisAccountSettings:
+    """Account identifiers required only for the read-only balance endpoint."""
+
+    cano: str
+    product_code: str
+
+    @classmethod
+    def from_env(cls) -> KisAccountSettings:
+        cano = os.getenv("KIS_CANO", "").strip()
+        product_code = os.getenv("KIS_ACNT_PRDT_CD", "").strip()
+        if not cano or not product_code:
+            raise VendorNotConfiguredError(
+                "KIS_CANO and KIS_ACNT_PRDT_CD are required for account-aware research. "
+                "They are used only for KIS read-only balance lookup."
+            )
+        if not cano.isdigit() or len(cano) != 8:
+            raise ValueError("KIS_CANO must be the eight-digit account number without hyphens.")
+        if not product_code.isdigit() or len(product_code) != 2:
+            raise ValueError("KIS_ACNT_PRDT_CD must be the two-digit account product code, e.g. '01'.")
+        return cls(cano=cano, product_code=product_code)
 
 
 class KisClient:
@@ -294,6 +318,141 @@ class KisClient:
         frame.attrs["latest_date"] = frame.index[-1].date().isoformat()
         return frame
 
+    def domestic_stock_balance(self) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Read all domestic stock positions and account totals from KIS.
+
+        This maps to the official ``inquire-balance`` endpoint.  KIS returns at
+        most 50 positions per page for real accounts, so continuation tokens
+        are followed rather than silently discarding a large portfolio.
+        """
+        account = KisAccountSettings.from_env()
+        tr_id = "VTTC8434R" if self.settings.environment == "demo" else "TTTC8434R"
+        positions: list[dict[str, Any]] = []
+        totals: dict[str, Any] | None = None
+        foreign_key = ""
+        next_key = ""
+
+        for _page in range(50):
+            response = self.session.get(
+                f"{self.settings.resolved_base_url}{_DOMESTIC_BALANCE_PATH}",
+                headers={
+                    "content-type": "application/json",
+                    "authorization": f"Bearer {self._token()}",
+                    "appkey": self.settings.app_key,
+                    "appsecret": self.settings.app_secret,
+                    "tr_id": tr_id,
+                },
+                params={
+                    "CANO": account.cano,
+                    "ACNT_PRDT_CD": account.product_code,
+                    "AFHR_FLPR_YN": "N",
+                    "OFL_YN": "",
+                    "INQR_DVSN": "02",
+                    "UNPR_DVSN": "01",
+                    "FUND_STTL_ICLD_YN": "N",
+                    "FNCG_AMT_AUTO_RDPT_YN": "N",
+                    "PRCS_DVSN": "00",
+                    "CTX_AREA_FK100": foreign_key,
+                    "CTX_AREA_NK100": next_key,
+                },
+                timeout=20,
+            )
+            if response.status_code == 429:
+                raise VendorRateLimitError("KIS account-balance API rate-limited the request.")
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("rt_cd") != "0":
+                raise RuntimeError(
+                    "KIS account-balance request failed: "
+                    f"{payload.get('msg_cd')} {payload.get('msg1')}"
+                )
+            page_positions = payload.get("output1")
+            page_totals = payload.get("output2")
+            if not isinstance(page_positions, list) or not isinstance(page_totals, list) or not page_totals:
+                raise RuntimeError("Unexpected KIS account-balance response: missing output1/output2.")
+            positions.extend(row for row in page_positions if isinstance(row, dict) and row.get("pdno"))
+            if totals is None:
+                totals = page_totals[0]
+
+            foreign_key = str(payload.get("ctx_area_fk100", "")).strip()
+            next_key = str(payload.get("ctx_area_nk100", "")).strip()
+            if not foreign_key and not next_key:
+                break
+        else:
+            raise RuntimeError("KIS account-balance pagination exceeded 50 pages.")
+
+        if totals is None:
+            raise RuntimeError("Unexpected KIS account-balance response: no account totals.")
+        return positions, totals
+
+    def account_snapshot(self, symbol: str) -> str:
+        """Render a privacy-minimized account context for agents.
+
+        No account identifier is returned.  The target symbol's holding is
+        explicit so that ``Hold`` means retain an existing holding, never
+        "wait while owning zero shares".  Other positions are summarized only
+        as concentration context.
+        """
+        if not _DOMESTIC_CODE.fullmatch(symbol):
+            raise ValueError("KIS domestic stock symbols must be six digits, e.g. '005930'.")
+        positions, totals = self.domestic_stock_balance()
+
+        def number(row: dict[str, Any], field: str) -> float:
+            raw = row.get(field)
+            if raw in (None, ""):
+                raise RuntimeError(f"Unexpected KIS account-balance response: missing {field}.")
+            try:
+                return float(str(raw).replace(",", ""))
+            except ValueError as exc:
+                raise RuntimeError(f"Unexpected KIS account-balance value for {field}: {raw!r}") from exc
+
+        total_assets = number(totals, "tot_evlu_amt")
+        cash = number(totals, "dnca_tot_amt")
+        stock_value = number(totals, "scts_evlu_amt")
+        target = next((row for row in positions if str(row.get("pdno", "")).zfill(6) == symbol), None)
+        target_qty = number(target, "hldg_qty") if target else 0.0
+        target_value = number(target, "evlu_amt") if target else 0.0
+        target_weight = (target_value / total_assets * 100) if total_assets > 0 else 0.0
+
+        lines = [
+            "## Read-only KIS account context (current, account number redacted)",
+            "- This is a live account snapshot, not historical portfolio data and not an order instruction.",
+            f"- Domestic positions held: {len(positions)}",
+            f"- Total evaluated assets: {total_assets:,.0f} KRW",
+            f"- Available cash/deposit: {cash:,.0f} KRW",
+            f"- Domestic stock evaluated amount: {stock_value:,.0f} KRW",
+        ]
+        ranked_positions = sorted(positions, key=lambda row: number(row, "evlu_amt"), reverse=True)
+        if ranked_positions:
+            lines.append("- Holdings by evaluated value (for diversification context; account number redacted):")
+            for row in ranked_positions[:10]:
+                value = number(row, "evlu_amt")
+                weight = (value / total_assets * 100) if total_assets > 0 else 0.0
+                name = str(row.get("prdt_name", "")).strip() or "unnamed"
+                code = str(row.get("pdno", "")).zfill(6)
+                lines.append(
+                    f"  - {code} {name}: {number(row, 'hldg_qty'):,.0f} shares, "
+                    f"{value:,.0f} KRW ({weight:.2f}%)"
+                )
+        if target is None:
+            lines.extend([
+                f"- Target {symbol} current holding: 0 shares (not held)",
+                "- Decision constraint: Hold/Underweight/Sell must not be presented as an action on this target; use Watch/No entry or Buy with a proposed size instead.",
+            ])
+        else:
+            average = number(target, "pchs_avg_pric")
+            current = number(target, "prpr")
+            pnl = number(target, "evlu_pfls_amt")
+            pnl_rate = number(target, "evlu_pfls_rt")
+            lines.extend([
+                f"- Target {symbol} current holding: {target_qty:,.0f} shares",
+                f"- Target average cost / current price: {average:,.0f} / {current:,.0f} KRW",
+                f"- Target evaluated value / portfolio weight: {target_value:,.0f} KRW / {target_weight:.2f}%",
+                f"- Target unrealized P&L / return: {pnl:,.0f} KRW / {pnl_rate:.2f}%",
+                "- Decision constraint: describe Buy as add, Hold as maintain, and Sell/Underweight as reduce or exit this existing position.",
+            ])
+        return "\n".join(lines)
+
 
 @lru_cache(maxsize=1)
 def _default_client() -> KisClient:
@@ -315,6 +474,11 @@ def get_kis_ohlcv_frame(symbol: str, start_date: str, end_date: str) -> pd.DataF
 def get_kis_investor_flow(symbol: str, as_of_date: str) -> pd.DataFrame:
     """Expose Korean investor-flow data without any secondary provider."""
     return _default_client().investor_flow(symbol, as_of_date)
+
+
+def get_kis_account_snapshot(symbol: str) -> str:
+    """Expose a redacted, read-only live account context for a target symbol."""
+    return _default_client().account_snapshot(symbol)
 
 
 def get_kis_indicators(symbol: str, indicator: str, curr_date: str, look_back_days: int) -> str:

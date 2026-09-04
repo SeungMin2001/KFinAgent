@@ -44,14 +44,17 @@ def create_portfolio_manager(llm):
 
 {instrument_context}
 
+**Read-only Account Context (mandatory action constraint):**
+{state.get('account_snapshot', '')}
+
 ---
 
 **Rating Scale** (use exactly one):
 - **Buy**: Strong conviction to enter or add to position
 - **Overweight**: Favorable outlook, gradually increase exposure
-- **Hold**: Maintain current position, no action needed
-- **Underweight**: Reduce exposure, take partial profits
-- **Sell**: Exit position or avoid entry
+- **Hold**: Maintain current position, no action needed. With zero target holding, call it Watch / No entry explicitly.
+- **Underweight**: Reduce exposure, take partial profits. With zero target holding, call it Avoid / No entry explicitly.
+- **Sell**: Exit position or avoid entry. With zero target holding, call it Avoid / No entry explicitly.
 
 **Context:**
 - Research Manager's investment plan: **{research_plan}**

@@ -429,6 +429,7 @@ class TradingAgentsGraph:
         trade_date,
         asset_type: str = "stock",
         verified_market_snapshot: str = "",
+        account_snapshot: str = "",
     ):
         """Run the trading agents graph for a company on a specific date.
 
@@ -455,6 +456,7 @@ class TradingAgentsGraph:
                 company_name, trade_date, asset_type=asset_type,
                 checkpoint_thread_id=thread_id_value,
                 verified_market_snapshot=verified_market_snapshot,
+                account_snapshot=account_snapshot,
             )
 
     def begin_checkpoint(self, company_name, trade_date, asset_type: str = "stock") -> str | None:
@@ -542,6 +544,7 @@ class TradingAgentsGraph:
         asset_type: str = "stock",
         checkpoint_thread_id: str | None = None,
         verified_market_snapshot: str = "",
+        account_snapshot: str = "",
     ):
         """Execute the graph and write the resulting state to disk and memory log."""
         # Initialize state — inject memory log context for PM and the
@@ -559,6 +562,7 @@ class TradingAgentsGraph:
             past_context=past_context,
             instrument_context=instrument_context,
             verified_market_snapshot=verified_market_snapshot,
+            account_snapshot=account_snapshot,
         )
         args = self.propagator.get_graph_args()
 
@@ -614,6 +618,7 @@ class TradingAgentsGraph:
         self.log_states_dict[str(trade_date)] = {
             "company_of_interest": final_state["company_of_interest"],
             "trade_date": final_state["trade_date"],
+            "account_snapshot": final_state.get("account_snapshot", ""),
             "market_report": final_state["market_report"],
             "sentiment_report": final_state["sentiment_report"],
             "news_report": final_state["news_report"],

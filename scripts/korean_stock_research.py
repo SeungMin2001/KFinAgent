@@ -1,9 +1,10 @@
-"""Run the quotation-only Korean-stock TradingAgents workflow.
+"""Run the read-only, account-aware Korean-stock TradingAgents workflow.
 
 Example:
     python scripts/korean_stock_research.py 005930 --date 2026-09-02
 
-It never creates orders.  KIS is used only for adjusted daily OHLCV data.
+It never creates orders. KIS is used for market data and an optional read-only
+domestic-stock balance lookup.
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ from tradingagents.korea import (  # noqa: E402, I001
 )
 from tradingagents.dataflows.korean_evidence import enhanced_korean_evidence  # noqa: E402, I001
 from tradingagents.dataflows.kronos import KronosSettings  # noqa: E402, I001
+from tradingagents.dataflows.kis import get_kis_account_snapshot  # noqa: E402, I001
 from tradingagents.visuals import (  # noqa: E402, I001
     append_visual_section,
     build_visual_summary,
@@ -105,7 +107,14 @@ def make_progress_printer(verbose: bool):
 
 
 def write_evidence_manifest(
-    report_path: Path, symbol: str, analysis_date: str, snapshot: str, enhanced: bool, kronos_enabled: bool
+    report_path: Path,
+    symbol: str,
+    analysis_date: str,
+    snapshot: str,
+    enhanced: bool,
+    kronos_enabled: bool,
+    account_enabled: bool,
+    account_snapshot: str,
 ) -> Path:
     """Save every factual input supplied to the agent workflow beside its report."""
     source_list = ["KIS 일봉 OHLCV·기술지표"]
@@ -120,6 +129,8 @@ def write_evidence_manifest(
         )
     if kronos_enabled:
         source_list.append("Kronos-base 시계열 예측(검증된 KIS 일봉 입력)")
+    if account_enabled:
+        source_list.append("KIS 국내주식 잔고조회(계좌번호 비식별 요약)")
     sources = "\n".join(f"- {item}" for item in source_list)
     text = f"""# Evidence Manifest — {symbol}
 
@@ -137,8 +148,12 @@ def write_evidence_manifest(
 - When Kronos is enabled, the Time-Series Forecast Evidence Analyst receives only the model-input and forecast section.
 - Their normalized reports are saved under `1_analysts/`.
 - Market Agent receives verified price/technical data plus all enabled evidence reports and produces `1_analysts/market.md`.
-- Bull / Bear / Research Manager / Trader / Risk / Portfolio Manager: receive the Market Agent report and debate outputs downstream.
-- No order or account API is used.
+- All debate and decision agents receive the read-only account context. Its target-position constraint distinguishes a true Hold from a no-position Watch / No entry.
+- No order API is used. The account endpoint only reads balance data.
+
+## Read-only account context
+
+{account_snapshot if account_enabled else "- Account-aware mode disabled; this report contains no live account data."}
 
 ## Visual evidence
 
@@ -157,13 +172,19 @@ def write_evidence_manifest(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="KIS-based Korean stock research (no order execution).")
+    parser = argparse.ArgumentParser(description="KIS-based Korean stock research with read-only account context (no order execution).")
     parser.add_argument("symbol", help="Six-digit KRX stock code, e.g. 005930")
     parser.add_argument("--date", default=date.today().isoformat(), help="Analysis date (YYYY-MM-DD)")
     parser.add_argument("--model", help="Override the LLM used for both research and quick steps")
     parser.add_argument("--debug", action="store_true", help="Print LangGraph messages while running")
     parser.add_argument("--verbose", action="store_true", help="Print each agent's completed analysis and debate output")
     parser.add_argument("--enhanced", action="store_true", help="Require DART, FRED, ECOS, and KIS investor-flow evidence")
+    parser.add_argument(
+        "--account-mode",
+        choices=("required", "disabled"),
+        default="required",
+        help="Require a live, read-only KIS domestic-stock balance snapshot (default: required).",
+    )
     parser.add_argument(
         "--kronos-mode",
         choices=("disabled", "local", "remote"),
@@ -197,6 +218,11 @@ def main() -> None:
         parser.error("--kronos-horizon must be between 1 and 30")
     if not 30 <= args.kronos_lookback <= 512:
         parser.error("--kronos-lookback must be between 30 and 512")
+    if args.account_mode == "required" and args.date != date.today().isoformat():
+        parser.error(
+            "Account-aware research only supports today's --date because KIS balance lookup is live, not historical. "
+            "Use today's date or pass --account-mode disabled for retrospective research."
+        )
 
     overrides = {
         "kronos_mode": kronos_mode,
@@ -218,6 +244,16 @@ def main() -> None:
     latest_row = next(line for line in snapshot.splitlines() if line.startswith("- Latest trading row used:"))
     print("[진행] 1/6 KIS 실캔들 조회 및 데이터 검증 완료", flush=True)
     print(latest_row, flush=True)
+
+    account_snapshot = ""
+    if args.account_mode == "required":
+        try:
+            account_snapshot = get_kis_account_snapshot(args.symbol)
+        except Exception as exc:  # noqa: BLE001 - account-aware mode is deliberately strict
+            parser.exit(2, f"KIS live account-balance verification failed; analysis was not started: {exc}\n")
+        target_line = next(line for line in account_snapshot.splitlines() if "Target " in line and "current holding" in line)
+        print("[진행] 2/7 KIS 실계좌 잔고조회 및 보유상태 검증 완료", flush=True)
+        print(target_line, flush=True)
 
     if args.enhanced:
         try:
@@ -243,12 +279,20 @@ def main() -> None:
         args.symbol,
         args.date,
         verified_market_snapshot=snapshot,
+        account_snapshot=account_snapshot,
     )
     path = graph.save_reports(state, args.symbol)
     visual_path = write_market_overview_svg(path.parent / "visuals", market_bars, snapshot)
     append_visual_section(path, visual_path)
     evidence_path = write_evidence_manifest(
-        path, args.symbol, args.date, snapshot, args.enhanced, kronos_mode != "disabled"
+        path,
+        args.symbol,
+        args.date,
+        snapshot,
+        args.enhanced,
+        kronos_mode != "disabled",
+        args.account_mode == "required",
+        account_snapshot,
     )
 
     print(f"Final signal: {signal}")

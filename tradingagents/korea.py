@@ -1,8 +1,8 @@
 """Korean-stock configuration built on the TradingAgents workflow.
 
-The first-stage integration is quotation-only: it uses KIS for daily market
-data and technical indicators, runs the existing market/research/risk debate,
-and never exposes an order tool.
+The integration uses KIS for daily market data, technical indicators, and
+optional read-only domestic account context. It runs the existing
+market/research/risk debate and never exposes an order tool.
 """
 
 from __future__ import annotations
