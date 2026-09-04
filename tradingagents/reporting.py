@@ -22,6 +22,12 @@ def write_report_tree(final_state: dict, ticker: str, save_path) -> Path:
         (account_dir / "context.md").write_text(final_state["account_snapshot"], encoding="utf-8")
         sections.append(f"## 0. Read-only Account Context\n\n{final_state['account_snapshot']}")
 
+    if final_state.get("historical_report_context"):
+        history_dir = save_path / "0_history"
+        history_dir.mkdir(exist_ok=True)
+        (history_dir / "prior_reports.md").write_text(final_state["historical_report_context"], encoding="utf-8")
+        sections.append(f"## 0. Prior Report References\n\n{final_state['historical_report_context']}")
+
     # 1. Analysts
     analysts_dir = save_path / "1_analysts"
     analyst_parts = []

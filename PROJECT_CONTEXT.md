@@ -64,6 +64,7 @@ bash scripts/bootstrap_local_env.sh
 출력은 `artifacts/reports/<종목>_<시각>/`에 저장된다.
 
 - `0_evidence.md`: 모든 원천 근거와 Agent 전달 경로
+- `0_history/prior_reports.md`: 분석일 이전의 같은 종목 리포트에서 읽은 결론 요약과 참조 경로
 - `1_analysts/market.md`: 통합 시장 분석
 - `1_analysts/disclosure.md`, `macro.md`, `flow.md`: 출처별 객관적 Evidence report
 - `1_analysts/kronos.md`: 모델 입력 캔들 요약·예측 범위·불확실성을 분리한 시계열 Evidence report
@@ -100,6 +101,7 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 - Kubernetes는 지금 사용하지 않는다. 1차 배포는 **Docker + RunPod 지속 GPU Pod + FastAPI**다.
 - Kronos는 최종 매매 신호가 아니라 확률적 보조 근거다.
 - 계좌 인지 실행은 KIS 잔고조회만 사용한다. 계좌번호를 제외한 보유 수량·평단·현금·평가금액 요약은 모든 에이전트에 전달되며, 주문 API는 연결하지 않는다. 보유 0주면 `Hold`를 실제 보유 유지로 해석하지 않고 `Watch / No entry`로 표시한다.
+- 매 실행 전 `artifacts/reports/`에서 같은 종목의 **분석일보다 이른** 완료 리포트를 최대 3건 읽고, Research Manager·Trader·Portfolio Manager 결론을 모든 에이전트에 참고문맥으로 전달한다. 과거 리포트는 현재 검증 데이터보다 우선하지 않으며, 이후 날짜 리포트는 참조하지 않는다.
 - Kronos 선택은 `--kronos`/`--require-kronos` 두 옵션으로 중복시키지 않고 `--kronos-mode {disabled,local,remote}` 하나로 제공한다.
 - `local` 또는 `remote`를 사용자가 명시하면 Kronos 실패 시 조용히 제외하지 않고 전체 분석을 중단한다. 기본값은 `disabled`다.
 - `local`은 로컬 HTTP API, `remote`는 RunPod 등 HTTPS API다. 두 모드 모두 API 키 인증을 사용한다.

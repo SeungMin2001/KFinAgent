@@ -61,6 +61,7 @@ def create_trader(llm):
                     f"Here is the research team's investment plan for {company_name}. "
                     f"{instrument_context}\n\n"
                     f"Read-only account context (mandatory action constraint):\n{account_snapshot}\n\n"
+                    f"Prior local report context (reference only; current verified evidence overrides it):\n{state.get('historical_report_context', '')}\n\n"
                     f"{report_section}"
                     f"Proposed Investment Plan:\n{investment_plan}\n\n"
                     "Make an informed, strategic trading decision. If the target holding is zero, "

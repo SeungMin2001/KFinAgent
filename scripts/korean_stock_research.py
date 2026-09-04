@@ -36,6 +36,7 @@ from tradingagents.korea import (  # noqa: E402, I001
 from tradingagents.dataflows.korean_evidence import enhanced_korean_evidence  # noqa: E402, I001
 from tradingagents.dataflows.kronos import KronosSettings  # noqa: E402, I001
 from tradingagents.dataflows.kis import get_kis_account_snapshot  # noqa: E402, I001
+from tradingagents.report_history import load_prior_report_context  # noqa: E402, I001
 from tradingagents.visuals import (  # noqa: E402, I001
     append_visual_section,
     build_visual_summary,
@@ -115,6 +116,7 @@ def write_evidence_manifest(
     kronos_enabled: bool,
     account_enabled: bool,
     account_snapshot: str,
+    historical_report_context: str,
 ) -> Path:
     """Save every factual input supplied to the agent workflow beside its report."""
     source_list = ["KIS 일봉 OHLCV·기술지표"]
@@ -154,6 +156,10 @@ def write_evidence_manifest(
 ## Read-only account context
 
 {account_snapshot if account_enabled else "- Account-aware mode disabled; this report contains no live account data."}
+
+## Prior report references consulted before debate
+
+{historical_report_context}
 
 ## Visual evidence
 
@@ -270,6 +276,15 @@ def main() -> None:
         if kronos_mode != "disabled":
             print("[진행] Kronos 예측 수신 및 시계열 근거 검증 완료", flush=True)
 
+    historical_report_context, prior_reports = load_prior_report_context(
+        PROJECT_ROOT / "artifacts" / "reports", args.symbol, args.date
+    )
+    if prior_reports:
+        dates = ", ".join(report.analysis_date for report in prior_reports)
+        print(f"[진행] 이전 {args.symbol} 리포트 {len(prior_reports)}건 참고: {dates}", flush=True)
+    else:
+        print(f"[진행] 이전 {args.symbol} 리포트 없음 (현재 분석일 이전 기준)", flush=True)
+
     graph = create_korean_stock_graph(
         {**overrides, "enable_korean_evidence_agents": args.enhanced},
         debug=args.debug,
@@ -280,6 +295,7 @@ def main() -> None:
         args.date,
         verified_market_snapshot=snapshot,
         account_snapshot=account_snapshot,
+        historical_report_context=historical_report_context,
     )
     path = graph.save_reports(state, args.symbol)
     visual_path = write_market_overview_svg(path.parent / "visuals", market_bars, snapshot)
@@ -293,6 +309,7 @@ def main() -> None:
         kronos_mode != "disabled",
         args.account_mode == "required",
         account_snapshot,
+        historical_report_context,
     )
 
     print(f"Final signal: {signal}")

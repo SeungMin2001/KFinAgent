@@ -52,6 +52,7 @@ Latest world affairs news: {news_report}
 {fundamentals_label}: {fundamentals_report}
 Additional Korean-market evidence (evaluate limitations and conflicts directly): {korean_evidence}
 Read-only account context (the target-position constraint is mandatory): {state.get('account_snapshot', '')}
+Prior local report context (reference only; current verified evidence overrides it): {state.get('historical_report_context', '')}
 Conversation history of the debate: {history}
 Last bull argument: {current_response}
 Use this information to deliver a compelling bear argument, refute the bull's claims, and engage in a dynamic debate that demonstrates the risks and weaknesses of investing in the {target_label}.

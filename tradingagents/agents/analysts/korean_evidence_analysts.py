@@ -122,6 +122,7 @@ def _evidence_prompt(
     domain_instruction: str,
     analysis_date: str,
     evidence: str,
+    historical_report_context: str,
     part_label: str = "",
 ):
     return ChatPromptTemplate.from_messages(
@@ -135,7 +136,10 @@ def _evidence_prompt(
                 "value, unit, period/date, and named source. Mark missing information instead of estimating it. "
                 "Do not issue buy/sell/hold, portfolio weights, price targets, or trade instructions. "
                 "Preserve conflicting facts and timing limitations. {domain_instruction} {part_label}"
-                "{language_instruction}\n\nAnalysis date: {analysis_date}\n\nVerified domain evidence:\n{evidence}",
+                "{language_instruction}\n\nAnalysis date: {analysis_date}\n\n"
+                "Prior local report context is supplied only to flag prior hypotheses that need re-checking. "
+                "It is not a factual source: never repeat a fact from it unless the current verified domain evidence also contains it.\n"
+                "{historical_report_context}\n\nVerified domain evidence:\n{evidence}",
             )
         ]
     ).format_messages(
@@ -146,6 +150,7 @@ def _evidence_prompt(
         language_instruction=get_language_instruction(),
         analysis_date=analysis_date,
         evidence=evidence,
+        historical_report_context=historical_report_context,
     )
 
 
@@ -180,6 +185,7 @@ def _create_evidence_analyst(
                 domain_instruction=domain_instruction,
                 analysis_date=state["trade_date"],
                 evidence=chunk,
+                historical_report_context=state.get("historical_report_context", ""),
                 part_label=part_label,
             )
             partial_reports.append(
@@ -201,6 +207,7 @@ def _create_evidence_analyst(
                 ),
                 analysis_date=state["trade_date"],
                 evidence=combined,
+                historical_report_context=state.get("historical_report_context", ""),
             )
             report = invoke_structured_strict(
                 structured_llm, synthesis_prompt, render_evidence_report, agent_name

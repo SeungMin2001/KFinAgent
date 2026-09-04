@@ -40,6 +40,9 @@ def create_research_manager(llm):
 **Read-only Account Context (mandatory action constraint):**
 {state.get('account_snapshot', '')}
 
+**Prior Local Report Context (reference only; current verified evidence overrides it):**
+{state.get('historical_report_context', '')}
+
 ---
 
 **Rating Scale** (use exactly one):

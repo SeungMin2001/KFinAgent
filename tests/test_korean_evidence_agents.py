@@ -88,6 +88,22 @@ def test_disclosure_agent_sees_only_disclosure_section_and_returns_report():
 
 
 @pytest.mark.unit
+def test_evidence_agent_treats_prior_report_as_non_factual_context():
+    llm = _FakeLLM()
+    state = {
+        "trade_date": "2026-09-02",
+        "verified_market_snapshot": SNAPSHOT,
+        "historical_report_context": "Prior report says a hypothetical 999 KRW result.",
+    }
+
+    create_disclosure_evidence_analyst(llm)(state)
+    rendered_prompt = "\n".join(message.content for message in llm.prompt)
+
+    assert "999 KRW" in rendered_prompt
+    assert "not a factual source" in rendered_prompt
+
+
+@pytest.mark.unit
 def test_evidence_agent_fails_when_its_verified_section_is_missing():
     with pytest.raises(RuntimeError, match="no verified disclosure evidence"):
         create_disclosure_evidence_analyst(_FakeLLM())(
