@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import lru_cache
@@ -405,32 +406,45 @@ class KisClient:
         next_key = ""
 
         for _page in range(50):
-            response = self.session.get(
-                f"{self.settings.resolved_base_url}{_DOMESTIC_BALANCE_PATH}",
-                headers={
-                    "content-type": "application/json",
-                    "authorization": f"Bearer {self._token()}",
-                    "appkey": self.settings.app_key,
-                    "appsecret": self.settings.app_secret,
-                    "tr_id": tr_id,
-                },
-                params={
-                    "CANO": account.cano,
-                    "ACNT_PRDT_CD": account.product_code,
-                    "AFHR_FLPR_YN": "N",
-                    "OFL_YN": "",
-                    "INQR_DVSN": "02",
-                    "UNPR_DVSN": "01",
-                    "FUND_STTL_ICLD_YN": "N",
-                    "FNCG_AMT_AUTO_RDPT_YN": "N",
-                    "PRCS_DVSN": "00",
-                    "CTX_AREA_FK100": foreign_key,
-                    "CTX_AREA_NK100": next_key,
-                },
-                timeout=20,
-            )
-            if response.status_code == 429:
-                raise VendorRateLimitError("KIS account-balance API rate-limited the request.")
+            for attempt, delay in enumerate((1, 2, 4), start=1):
+                response = self.session.get(
+                    f"{self.settings.resolved_base_url}{_DOMESTIC_BALANCE_PATH}",
+                    headers={
+                        "content-type": "application/json",
+                        "authorization": f"Bearer {self._token()}",
+                        "appkey": self.settings.app_key,
+                        "appsecret": self.settings.app_secret,
+                        "tr_id": tr_id,
+                    },
+                    params={
+                        "CANO": account.cano,
+                        "ACNT_PRDT_CD": account.product_code,
+                        "AFHR_FLPR_YN": "N",
+                        "OFL_YN": "",
+                        "INQR_DVSN": "02",
+                        "UNPR_DVSN": "01",
+                        "FUND_STTL_ICLD_YN": "N",
+                        "FNCG_AMT_AUTO_RDPT_YN": "N",
+                        "PRCS_DVSN": "00",
+                        "CTX_AREA_FK100": foreign_key,
+                        "CTX_AREA_NK100": next_key,
+                    },
+                    timeout=20,
+                )
+                try:
+                    error_payload = response.json() if response.status_code >= 400 else {}
+                except ValueError:
+                    error_payload = {}
+                rate_limited = response.status_code == 429 or (
+                    isinstance(error_payload, dict) and error_payload.get("msg_cd") == "EGW00215"
+                )
+                if not rate_limited:
+                    break
+                if attempt == 3:
+                    raise VendorRateLimitError(
+                        "KIS account-balance API rate-limited the request after 3 retries."
+                    )
+                time.sleep(delay)
             if response.status_code >= 400:
                 # Do not call ``raise_for_status`` here: its message embeds the
                 # complete request URL, including the account number (CANO).

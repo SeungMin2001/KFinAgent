@@ -227,6 +227,28 @@ def test_account_balance_uses_header_not_context_fields_for_pagination(monkeypat
     assert len(calls) == 1
 
 
+def test_account_balance_retries_kis_egw_rate_limit(monkeypatch):
+    monkeypatch.setenv("KIS_CANO", "12345678")
+    monkeypatch.setenv("KIS_ACNT_PRDT_CD", "01")
+    session = FakeSession()
+    responses = [
+        FakeResponse({"msg_cd": "EGW00215", "msg1": "rate limited"}, status_code=500),
+        FakeResponse(
+            {
+                "rt_cd": "0", "output1": [],
+                "output2": [{"tot_evlu_amt": "0", "dnca_tot_amt": "0", "scts_evlu_amt": "0"}],
+            }
+        ),
+    ]
+    session.get = lambda *_args, **_kwargs: responses.pop(0)
+    pauses = []
+    monkeypatch.setattr("tradingagents.dataflows.kis.time.sleep", pauses.append)
+
+    KisClient(KisSettings("key", "secret", base_url="https://example.test"), session=session).account_snapshot("005930")
+
+    assert pauses == [1]
+
+
 def test_propagator_keeps_account_snapshot_in_agent_state():
     state = Propagator().create_initial_state(
         "005930",
