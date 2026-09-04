@@ -71,6 +71,7 @@ bash scripts/bootstrap_local_env.sh
 - `2_research/`: Bull/Bear/Manager 토론
 - `3_trading/`, `4_risk/`, `5_portfolio/`: 최종 판단 과정
 - `complete_report.md`: 통합 리포트
+- `FINAL_BRIEF.md`: 최종 등급·실행안·계좌 제약·핵심 근거·차트를 한눈에 보는 결정 우선 요약
 
 ## 환경변수
 

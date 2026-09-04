@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from tradingagents.graph.trading_graph import TradingAgentsGraph
-from tradingagents.reporting import write_report_tree
+from tradingagents.reporting import write_final_brief, write_report_tree
 
 
 def _state():
@@ -47,6 +47,33 @@ def test_write_report_tree_includes_read_only_account_context(tmp_path):
 
     assert (tmp_path / "0_account" / "context.md").read_text() == state["account_snapshot"]
     assert "Read-only Account Context" in path.read_text()
+
+
+@pytest.mark.unit
+def test_write_final_brief_is_decision_first_and_links_detailed_artifacts(tmp_path):
+    report_path = tmp_path / "complete_report.md"
+    report_path.write_text("# Full report", encoding="utf-8")
+    visual = tmp_path / "visuals" / "market_overview.svg"
+    visual.parent.mkdir()
+    visual.write_text("<svg/>", encoding="utf-8")
+    state = {
+        "final_trade_decision": "**Rating**: Buy",
+        "trader_investment_plan": "**Action**: Buy",
+        "account_snapshot": "Target 005930 current holding: 0 shares (not held)",
+        "historical_report_context": "Referenced prior report — 2026-08-02",
+        "flow_report": "### Objective summary\n외국인 순매수 관찰.",
+        "kronos_report": "### Objective summary\n12일 중앙 예측 경로.",
+    }
+
+    brief = write_final_brief(report_path, state, "005930", visual_path=visual)
+    content = brief.read_text()
+
+    assert brief.name == "FINAL_BRIEF.md"
+    assert content.index("최종 포트폴리오 판단") < content.index("핵심 근거")
+    assert "**Rating**: Buy" in content
+    assert "외국인 순매수 관찰." in content
+    assert "visuals/market_overview.svg" in content
+    assert "complete_report.md" in content
 
 
 @pytest.mark.unit

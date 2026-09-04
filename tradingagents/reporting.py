@@ -10,6 +10,93 @@ from datetime import datetime
 from pathlib import Path
 
 
+def _objective_summary(report: str, limit: int = 900) -> str:
+    """Extract a compact evidence conclusion without asking another LLM."""
+    marker = "### Objective summary"
+    text = report.split(marker, 1)[1].strip() if marker in report else report.strip()
+    if len(text) > limit:
+        return text[:limit].rstrip() + "\n[요약 길이 제한으로 일부 생략]"
+    return text or "수집된 요약이 없습니다."
+
+
+def write_final_brief(
+    report_path: Path,
+    final_state: dict,
+    ticker: str,
+    *,
+    visual_path: Path | None = None,
+) -> Path:
+    """Write one decision-first file that links to all detailed artifacts.
+
+    This is intentionally deterministic: it reuses agent outputs rather than
+    issuing a post-hoc LLM call that could change the final decision.
+    """
+    report_path = Path(report_path)
+    output_dir = report_path.parent
+    risk = final_state.get("risk_debate_state") or {}
+    visual = ""
+    if visual_path:
+        visual = f"\n## 차트\n\n![KIS 시장·Kronos 예측]({visual_path.relative_to(output_dir).as_posix()})\n"
+
+    evidence = []
+    for field, label in (
+        ("market_report", "시장·기술 분석"),
+        ("disclosure_report", "공시"),
+        ("macro_report", "미국·한국 매크로"),
+        ("flow_report", "외국인·기관 수급"),
+        ("kronos_report", "Kronos 시계열 예측"),
+    ):
+        if value := final_state.get(field):
+            evidence.append(f"### {label}\n\n{_objective_summary(value)}")
+
+    account = final_state.get("account_snapshot") or "계좌 인지 모드가 비활성화되어 있습니다."
+    history = final_state.get("historical_report_context") or "이전 리포트 참고 내역이 없습니다."
+    decision = final_state.get("final_trade_decision") or risk.get("judge_decision") or "최종 결론이 생성되지 않았습니다."
+    evidence_text = "\n\n".join(evidence) if evidence else "수집된 근거 리포트가 없습니다."
+    detail_links = ["- [전체 토론·근거 리포트](complete_report.md)"]
+    for relative, label in (
+        ("0_evidence.md", "원천 근거 스냅샷"),
+        ("0_account/context.md", "계좌 요약"),
+        ("0_history/prior_reports.md", "이전 리포트 참조"),
+        ("1_analysts", "분석가별 리포트"),
+    ):
+        if (output_dir / relative).exists():
+            suffix = "/" if (output_dir / relative).is_dir() else ""
+            detail_links.append(f"- [{label}]({relative}{suffix})")
+    detail_links_text = "\n".join(detail_links)
+    brief = f"""# 최종 투자 판단 요약 — {ticker}
+
+이 파일은 최종 결론을 빠르게 검토하기 위한 요약본입니다. 주문을 실행하지 않습니다.
+
+## 최종 포트폴리오 판단
+
+{decision}
+
+## 트레이더 실행안
+
+{final_state.get('trader_investment_plan') or '트레이더 실행안이 생성되지 않았습니다.'}
+
+## 현재 계좌 제약
+
+{account}
+
+## 핵심 근거
+
+{evidence_text}
+
+## 이전 리포트 참고
+
+{history}
+{visual}
+## 상세 자료
+
+{detail_links_text}
+"""
+    target = output_dir / "FINAL_BRIEF.md"
+    target.write_text(brief, encoding="utf-8")
+    return target
+
+
 def write_report_tree(final_state: dict, ticker: str, save_path) -> Path:
     """Save a completed run's reports to ``save_path``; return the complete-report path."""
     save_path = Path(save_path)

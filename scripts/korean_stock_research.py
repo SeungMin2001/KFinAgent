@@ -42,6 +42,7 @@ from tradingagents.visuals import (  # noqa: E402, I001
     build_visual_summary,
     write_market_overview_svg,
 )
+from tradingagents.reporting import write_final_brief  # noqa: E402, I001
 
 
 STAGE_LABELS = {
@@ -311,11 +312,13 @@ def main() -> None:
         account_snapshot,
         historical_report_context,
     )
+    brief_path = write_final_brief(path, state, args.symbol, visual_path=visual_path)
 
     print(f"Final signal: {signal}")
     print(f"Report written to: {path}")
     print(f"Evidence manifest written to: {evidence_path}")
     print(f"Visual evidence written to: {visual_path}")
+    print(f"Final decision brief written to: {brief_path}")
 
 
 if __name__ == "__main__":
