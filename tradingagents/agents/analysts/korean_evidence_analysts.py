@@ -60,7 +60,8 @@ _DOMAIN_INSTRUCTIONS = {
         "Disclosure Evidence Analyst",
         "disclosure_report",
         "Extract filing type, filing/effective dates, amounts, counterparties, periods, and correction status. "
-        "Distinguish disclosed fact from possible impact. Do not label a filing simply as good or bad.",
+        "Distinguish disclosed fact from possible impact. Treat KIS headlines as topic flags only: do not "
+        "turn title wording into a verified fact or a directional recommendation. Do not label a filing simply as good or bad.",
     ),
     "macro": (
         "Macro Evidence Analyst",

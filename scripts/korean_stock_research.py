@@ -46,7 +46,7 @@ from tradingagents.reporting import write_final_brief  # noqa: E402, I001
 
 
 STAGE_LABELS = {
-    "Disclosure Evidence Analyst": "공시 근거 정규화",
+    "Disclosure Evidence Analyst": "공시·KIS 시황 헤드라인 근거 정규화",
     "Macro Evidence Analyst": "거시 근거 정규화",
     "Flow Evidence Analyst": "수급 근거 정규화",
     "Time-Series Forecast Evidence Analyst": "Kronos 시계열 예측 근거 정규화",
@@ -125,6 +125,7 @@ def write_evidence_manifest(
         source_list.extend(
             [
                 "OpenDART 최근 공시",
+                "KIS 종합 시황/공시 제목(종목 연관 헤드라인)",
                 "FRED 미국 매크로(금리·CPI·국채·달러·VIX)",
                 "한국은행 ECOS 보조 매크로",
                 "KIS 투자자별 수급(외국인·기관계·투신·기금)",
@@ -249,7 +250,7 @@ def main() -> None:
         parser.exit(2, f"KIS live data verification failed; analysis was not started: {exc}\n")
 
     latest_row = next(line for line in snapshot.splitlines() if line.startswith("- Latest trading row used:"))
-    print("[진행] 1/6 KIS 실캔들 조회 및 데이터 검증 완료", flush=True)
+    print("[진행] 1/7 KIS 실캔들 조회 및 데이터 검증 완료", flush=True)
     print(latest_row, flush=True)
 
     account_snapshot = ""
@@ -273,7 +274,7 @@ def main() -> None:
             )
         except Exception as exc:  # noqa: BLE001 - enhanced mode is deliberately strict
             parser.exit(2, f"Enhanced evidence collection failed; analysis was not started: {exc}\n")
-        print("[진행] DART·미국/한국 매크로·KIS 수급 검증 완료", flush=True)
+        print("[진행] 3/7 DART·KIS 헤드라인·미국/한국 매크로·KIS 수급 검증 완료", flush=True)
         if kronos_mode != "disabled":
             print("[진행] Kronos 예측 수신 및 시계열 근거 검증 완료", flush=True)
 

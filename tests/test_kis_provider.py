@@ -13,6 +13,7 @@ class FakeResponse:
     def __init__(self, payload: dict, status_code: int = 200):
         self.payload = payload
         self.status_code = status_code
+        self.headers = {}
 
     def json(self):
         return self.payload
@@ -261,3 +262,32 @@ def test_kis_investor_flow_exposes_finalization_time_window():
 
     with pytest.raises(KisInvestorFlowTimeWindowError, match="OPSQ2001"):
         client.investor_flow("005930", "2026-09-03")
+
+
+def test_kis_news_titles_filters_future_rows_and_uses_official_request_shape():
+    session = FakeSession()
+    headline_response = FakeResponse(
+        {
+            "rt_cd": "0",
+            "output": [
+                {"data_dt": "20260902", "data_tm": "091500", "hts_pbnt_titl_cntt": "삼성전자 headline", "iscd1": "005930"},
+                {"data_dt": "20260903", "data_tm": "091500", "hts_pbnt_titl_cntt": "future", "iscd1": "005930"},
+                {"data_dt": "20260902", "data_tm": "091500", "hts_pbnt_titl_cntt": "other", "iscd1": "000660"},
+            ],
+        }
+    )
+
+    def get(*args, **kwargs):
+        session.gets.append((args, kwargs))
+        return headline_response
+
+    session.get = get
+    client = KisClient(KisSettings("key", "secret", base_url="https://example.test"), session=session)
+
+    rows = client.news_titles("005930", "2026-09-02")
+
+    assert [row["hts_pbnt_titl_cntt"] for row in rows] == ["삼성전자 headline"]
+    _, request = session.gets[0]
+    assert request["headers"]["tr_id"] == "FHKST01011800"
+    assert request["params"]["FID_INPUT_ISCD"] == "005930"
+    assert request["params"]["FID_INPUT_DATE_1"] == "20260902"

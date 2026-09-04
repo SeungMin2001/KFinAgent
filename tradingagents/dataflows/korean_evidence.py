@@ -8,7 +8,7 @@ import pandas as pd
 
 from .dart import disclosure_context
 from .ecos import korea_macro_context
-from .kis import KisInvestorFlowTimeWindowError, get_kis_investor_flow
+from .kis import KisInvestorFlowTimeWindowError, get_kis_investor_flow, get_kis_news_titles
 from .kronos import (
     PAPER_DAILY_HORIZON,
     PAPER_DAILY_LOOKBACK,
@@ -50,7 +50,7 @@ def evidence_for_domain(snapshot: str, domain: str) -> str:
     """Return only the verified snapshot sections assigned to ``domain``."""
     selectors = {
         "market": ("Verified market data snapshot", "Deterministic chart summary"),
-        "disclosure": ("OpenDART disclosures",),
+        "disclosure": ("OpenDART disclosures", "KIS market/disclosure headline snapshot"),
         "fundamentals": ("OpenDART disclosures",),
         "macro": ("US macro snapshot", "FRED:", "Bank of Korea ECOS macro snapshot"),
         "flow": ("KIS investor flow snapshot",),
@@ -136,6 +136,34 @@ def investor_flow_context(
             f"최근 {abs(streak)}일 {direction}"
         )
     lines += ["", "수급은 인과관계가 아닌 관측값이다. 가격·공시·매크로와 충돌하면 충돌을 명시한다."]
+    return "\n".join(lines)
+
+
+def kis_headline_context(symbol: str, as_of: str, *, limit: int = 20) -> str:
+    """Render KIS title metadata without pretending it contains article text."""
+    rows = get_kis_news_titles(symbol, as_of, limit=limit)
+    lines = [
+        "## KIS market/disclosure headline snapshot (official HTS title metadata)",
+        "",
+        f"- Requested analysis date: {as_of}",
+        f"- Symbol-filtered headlines retained: {len(rows)} (limit {limit})",
+        "- This source supplies titles and metadata only. It does not supply article bodies, causes, or verified event details.",
+    ]
+    if not rows:
+        lines.append("- No qualifying KIS headline row was returned for this query.")
+        return "\n".join(lines)
+    lines += ["", "| Published | Source | Category | Title |", "|---|---|---|---|"]
+    for row in rows:
+        timestamp = f"{row.get('data_dt', '')} {row.get('data_tm', '')}".strip()
+        source = str(row.get("dorg", "")).strip() or str(row.get("news_ofer_entp_code", "")).strip() or "not provided"
+        category = str(row.get("news_lrdv_code", "")).strip() or "not provided"
+        title = str(row.get("hts_pbnt_titl_cntt", "")).replace("|", "\\|").strip()
+        lines.append(f"| {timestamp} | {source} | {category} | {title} |")
+    lines += [
+        "",
+        "Limitations: Headline wording is not a factual substitute for the linked article or an official filing. "
+        "Use it to flag topics for scrutiny; do not infer event timing, magnitude, or trade direction from a title alone.",
+    ]
     return "\n".join(lines)
 
 
@@ -264,6 +292,11 @@ def enhanced_korean_evidence(
                 as_of,
                 short_window=int(settings.get("korean_flow_short_window", 5)),
                 long_window=int(settings.get("korean_flow_long_window", 20)),
+            ),
+            kis_headline_context(
+                symbol,
+                as_of,
+                limit=int(settings.get("korean_headline_limit", 20)),
             ),
         ]
     kronos_mode = str(settings.get("kronos_mode", "disabled"))

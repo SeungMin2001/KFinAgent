@@ -23,6 +23,7 @@ from .errors import NoMarketDataError, VendorNotConfiguredError, VendorRateLimit
 
 _DOMESTIC_DAILY_PATH = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
 _DOMESTIC_BALANCE_PATH = "/uapi/domestic-stock/v1/trading/inquire-balance"
+_DOMESTIC_NEWS_TITLE_PATH = "/uapi/domestic-stock/v1/quotations/news-title"
 _TOKEN_PATH = "/oauth2/tokenP"
 _DOMESTIC_CODE = re.compile(r"^\d{6}$")
 
@@ -318,6 +319,77 @@ class KisClient:
         frame.attrs["latest_date"] = frame.index[-1].date().isoformat()
         return frame
 
+    def news_titles(self, symbol: str, as_of_date: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        """Return KIS domestic market/disclosure headline rows for one symbol.
+
+        The endpoint supplies HTS title metadata, not article bodies. Rows are
+        filtered to the requested date after the response so a historical
+        analysis cannot consume a later headline. KIS's query is paginated;
+        only the requested number of qualifying rows is retained.
+        """
+        if not _DOMESTIC_CODE.fullmatch(symbol):
+            raise ValueError("KIS domestic stock symbols must be six digits, e.g. '005930'.")
+        if limit < 1 or limit > 100:
+            raise ValueError("KIS headline limit must be between 1 and 100.")
+        requested = datetime.strptime(as_of_date, "%Y-%m-%d").date()
+        rows: list[dict[str, Any]] = []
+        continuation = ""
+        for _page in range(10):
+            response = self.session.get(
+                f"{self.settings.resolved_base_url}{_DOMESTIC_NEWS_TITLE_PATH}",
+                headers={
+                    "content-type": "application/json",
+                    "authorization": f"Bearer {self._token()}",
+                    "appkey": self.settings.app_key,
+                    "appsecret": self.settings.app_secret,
+                    "tr_id": "FHKST01011800",
+                    "tr_cont": continuation,
+                },
+                params={
+                    "FID_NEWS_OFER_ENTP_CODE": "2",
+                    "FID_COND_MRKT_CLS_CODE": "00",
+                    "FID_INPUT_ISCD": symbol,
+                    "FID_TITL_CNTT": "",
+                    "FID_INPUT_DATE_1": requested.strftime("%Y%m%d"),
+                    "FID_INPUT_HOUR_1": "235959",
+                    "FID_RANK_SORT_CLS_CODE": "01",
+                    "FID_INPUT_SRNO": "1",
+                },
+                timeout=20,
+            )
+            if response.status_code == 429:
+                raise VendorRateLimitError("KIS headline API rate-limited the request.")
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("rt_cd") != "0":
+                raise RuntimeError(
+                    f"KIS headline request failed: {payload.get('msg_cd')} {payload.get('msg1')}"
+                )
+            page_rows = payload.get("output") or []
+            if not isinstance(page_rows, list):
+                raise RuntimeError("Unexpected KIS headline response: output is not a list.")
+            for row in page_rows:
+                if not isinstance(row, dict):
+                    continue
+                raw_date = str(row.get("data_dt", "")).strip()
+                title = str(row.get("hts_pbnt_titl_cntt", "")).strip()
+                codes = {str(row.get(f"iscd{index}", "")).zfill(6) for index in range(1, 6)}
+                if not title or symbol not in codes:
+                    continue
+                try:
+                    published = datetime.strptime(raw_date, "%Y%m%d").date()
+                except ValueError as exc:
+                    raise RuntimeError(f"Unexpected KIS headline date: {raw_date!r}") from exc
+                if published <= requested:
+                    rows.append(row)
+                    if len(rows) >= limit:
+                        return rows
+            continuation = response.headers.get("tr_cont", "").strip()
+            if continuation != "M":
+                break
+            continuation = "N"
+        return rows
+
     def domestic_stock_balance(self) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Read all domestic stock positions and account totals from KIS.
 
@@ -479,6 +551,11 @@ def get_kis_investor_flow(symbol: str, as_of_date: str) -> pd.DataFrame:
 def get_kis_account_snapshot(symbol: str) -> str:
     """Expose a redacted, read-only live account context for a target symbol."""
     return _default_client().account_snapshot(symbol)
+
+
+def get_kis_news_titles(symbol: str, as_of_date: str, *, limit: int = 20) -> list[dict[str, Any]]:
+    """Expose KIS HTS market/disclosure title metadata for a domestic symbol."""
+    return _default_client().news_titles(symbol, as_of_date, limit=limit)
 
 
 def get_kis_indicators(symbol: str, indicator: str, curr_date: str, look_back_days: int) -> str:

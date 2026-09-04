@@ -29,6 +29,7 @@ _ENV_OVERRIDES = {
     "TRADINGAGENTS_KOREAN_ECOS_LOOKBACK_DAYS": "korean_ecos_lookback_days",
     "TRADINGAGENTS_KOREAN_FLOW_SHORT_WINDOW": "korean_flow_short_window",
     "TRADINGAGENTS_KOREAN_FLOW_LONG_WINDOW": "korean_flow_long_window",
+    "TRADINGAGENTS_KOREAN_HEADLINE_LIMIT": "korean_headline_limit",
     # Provider-specific reasoning/thinking knobs (None = each provider's own
     # default). Settable here for non-interactive runs; the CLI also offers an
     # interactive choice, which is skipped when the matching var is set.
@@ -149,6 +150,7 @@ DEFAULT_CONFIG = _apply_env_overrides({
     "korean_ecos_lookback_days": 400,
     "korean_flow_short_window": 5,
     "korean_flow_long_window": 20,
+    "korean_headline_limit": 20,
     # Output language for analyst reports and final decision
     # Internal agent debate stays in English for reasoning quality
     "output_language": "English",
