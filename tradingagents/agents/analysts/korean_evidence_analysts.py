@@ -143,6 +143,11 @@ def _evidence_prompt(
                 "value, unit, period/date, and named source. Mark missing information instead of estimating it. "
                 "Do not issue buy/sell/hold, portfolio weights, price targets, or trade instructions. "
                 "Preserve conflicting facts and timing limitations. {domain_instruction} {part_label}"
+                " Read all supplied evidence but report at most 12 material observations. "
+                "Keep each observation concise, preserve exact numbers, units, periods and sources, "
+                "and summarize repeated or immaterial rows rather than transcribing the source. "
+                "Keep the summary within 150 words and each conflicts/missing_data/limitations list "
+                "within 5 concise entries. Do not claim this report exhaustively reproduces the source. "
                 "{language_instruction}\n\nAnalysis date: {analysis_date}\n\n"
                 "Prior local report context is supplied only to flag prior hypotheses that need re-checking. "
                 "It is not a factual source: never repeat a fact from it unless the current verified domain evidence also contains it.\n"
@@ -184,7 +189,7 @@ def _create_evidence_analyst(
             if len(chunks) > 1:
                 part_label = (
                     f"This is part {index} of {len(chunks)} of one complete disclosure corpus. "
-                    "Analyze every fact in this part, but do not claim something is absent from the entire corpus "
+                    "Review this part for material facts, but do not claim something is absent from the entire corpus "
                     "merely because it is absent from this part."
                 )
             prompt = _evidence_prompt(

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from scripts.benchmark_korean_stock import enforce_evidence_budget
+from scripts.benchmark_korean_stock import audited_usage, enforce_evidence_budget
 from scripts.summarize_agent_audit import summarize
 
 
@@ -80,3 +80,11 @@ def test_evidence_budget_fails_before_large_corpus_is_sent():
     assert enforce_evidence_budget("x" * 100, 100) == 100
     with pytest.raises(ValueError, match="above the explicit"):
         enforce_evidence_budget("x" * 101, 100)
+
+
+def test_usage_survives_failed_graph(tmp_path):
+    with pytest.raises(RuntimeError), audited_usage(tmp_path, "failed") as usage:
+        usage.usage_metadata["test-model"] = {"input_tokens": 10, "output_tokens": 2}
+        raise RuntimeError("node failed")
+    recorded = json.loads((tmp_path / "failed_usage.json").read_text())
+    assert recorded["test-model"]["input_tokens"] == 10

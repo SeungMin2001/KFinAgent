@@ -8,6 +8,7 @@ import json
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -40,6 +41,21 @@ def enforce_evidence_budget(evidence: str, limit: int) -> int:
             "Review the corpus and raise --max-evidence-chars deliberately; this is not a token cap."
         )
     return size
+
+
+@contextmanager
+def audited_usage(output: Path, stem: str):
+    """Keep provider-reported usage even when a later graph node fails."""
+    from langchain_core.callbacks import get_usage_metadata_callback
+
+    with get_usage_metadata_callback() as usage:
+        try:
+            yield usage
+        finally:
+            (output / f"{stem}_usage.json").write_text(
+                json.dumps(usage.usage_metadata, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
 
 
 def main():
@@ -187,6 +203,13 @@ def main():
         # Third-party exceptions can embed account URLs or auth data. Persist
         # only the exception class here; no partial leaderboard is produced.
         failure = {"status": "failed", "error_type": type(exc).__name__}
+        chain = []
+        cause = exc
+        while cause is not None and len(chain) < 6:
+            chain.append(type(cause).__name__)
+            cause = cause.__cause__
+        failure["error_chain"] = chain
+        failure["last_agent_stage"] = manifest.get("last_agent_stage")
         response = getattr(exc, "response", None)
         if response is not None:
             from urllib.parse import urlparse
@@ -368,6 +391,10 @@ def execute(args, strategies, manifest, output):
                     overrides.update(deep_think_llm=args.model, quick_think_llm=args.model)
 
                 def progress(event, stage, result=None):
+                    manifest["last_agent_stage"] = {
+                        "strategy": strategy, "symbol": symbol, "date": as_of,
+                        "stage": stage, "event": event,
+                    }
                     if event == "started":
                         print(f"  [Agent] {stage}", flush=True)
 
@@ -378,8 +405,7 @@ def execute(args, strategies, manifest, output):
                     if args.allocation_policy == "step"
                     else "Buy/Overweight enters full long; Underweight/Sell exits."
                 )
-                from langchain_core.callbacks import get_usage_metadata_callback
-                with get_usage_metadata_callback() as usage:
+                with audited_usage(output, f"{strategy}_{symbol}_{as_of}") as usage:
                     state, signal = graph.propagate(
                         symbol,
                         as_of,

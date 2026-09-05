@@ -37,6 +37,9 @@ def combine(runs: list[Path], output: Path):
             "allocation_policy",
             "initial_exposure",
             "periodic_fundamentals",
+            "dart_evidence_policy",
+            "max_output_tokens_per_response",
+            "source_sha256",
             "llm_config",
             "git_commit",
         ):
