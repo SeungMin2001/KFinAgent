@@ -31,6 +31,17 @@ from tradingagents.benchmark import (  # noqa: E402
 )
 
 
+def enforce_evidence_budget(evidence: str, limit: int) -> int:
+    """Stop before a paid graph call when source material is unexpectedly large."""
+    size = len(evidence)
+    if size > limit:
+        raise ValueError(
+            f"Verified evidence is {size:,} characters, above the explicit {limit:,} limit. "
+            "Review the corpus and raise --max-evidence-chars deliberately; this is not a token cap."
+        )
+    return size
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--symbols", nargs="+", default=["005930", "000660"])
@@ -56,6 +67,18 @@ def main():
         help="Explicitly reuse checksum-verified KIS bars from a previous run",
     )
     parser.add_argument("--max-agent-calls", type=int, default=120)
+    parser.add_argument(
+        "--max-output-tokens",
+        type=int,
+        default=4096,
+        help="Per LLM response safety cap; this does not cap total input or billed tokens",
+    )
+    parser.add_argument(
+        "--max-evidence-chars",
+        type=int,
+        default=300_000,
+        help="Pre-LLM character guard per symbol/date; deliberately raise after reviewing the corpus",
+    )
     parser.add_argument("--global-risk-from", type=Path, help="Explicit directory of prepared dated real global snapshots; never falls back to live")
     parser.add_argument("--allocation-policy", choices=["step", "binary"], default="step")
     parser.add_argument(
@@ -80,6 +103,10 @@ def main():
         parser.error("Use a completed historical period: start < end < today")
     if args.cadence < 1 or not 0 <= args.cost_bps < 10000:
         parser.error("cadence >=1 and cost-bps in [0,10000) required")
+    if args.max_output_tokens < 256:
+        parser.error("max-output-tokens must be >=256")
+    if args.max_evidence_chars < 10_000:
+        parser.error("max-evidence-chars must be >=10000")
     if not 0 <= args.initial_exposure <= 1:
         parser.error("initial-exposure must be in [0,1]")
     if len(set(args.symbols)) != len(args.symbols) or any(
@@ -97,10 +124,17 @@ def main():
         "capital_per_symbol": 1_000_000,
         "model_override": args.model,
         "global_risk": args.global_risk,
-        "global_risk_source": "frozen_snapshot" if args.global_risk_from else "live",
+        "global_risk_source": (
+            "disabled"
+            if not args.global_risk
+            else "frozen_snapshot" if args.global_risk_from else "live"
+        ),
         "allocation_policy": args.allocation_policy,
         "initial_exposure": args.initial_exposure,
         "periodic_fundamentals": True,
+        "dart_evidence_policy": "structured-financials-keyword-context-v1",
+        "max_output_tokens_per_response": args.max_output_tokens,
+        "max_evidence_chars_per_decision": args.max_evidence_chars,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "git_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
@@ -265,6 +299,7 @@ def execute(args, strategies, manifest, output):
         }
         if args.model:
             manifest["llm_config"].update(deep_think_llm=args.model, quick_think_llm=args.model)
+        manifest["llm_config"]["max_tokens"] = args.max_output_tokens
     shared_evidence, forecasts = {}, {}
     curves, all_trades = {}, {}
     for strategy in strategies:
@@ -315,6 +350,9 @@ def execute(args, strategies, manifest, output):
                                 "global_risk_snapshot_dir": args.global_risk_from},
                         market_bars=bars,
                     )
+                    manifest.setdefault("evidence_chars", {})[f"{symbol}_{as_of}"] = (
+                        enforce_evidence_budget(shared_evidence[key], args.max_evidence_chars)
+                    )
                     (output / f"{symbol}_{as_of}_evidence.md").write_text(shared_evidence[key])
                 snapshot = shared_evidence[key] + (
                     "\n\n" + forecasts[key] if strategy == "agents_kronos" else ""
@@ -324,6 +362,7 @@ def execute(args, strategies, manifest, output):
                     "enable_kronos_evidence_agent": strategy == "agents_kronos",
                     "kronos_mode": "remote" if strategy == "agents_kronos" else "disabled",
                     "results_dir": str(output / "agent_logs" / strategy),
+                    "max_tokens": args.max_output_tokens,
                 }
                 if args.model:
                     overrides.update(deep_think_llm=args.model, quick_think_llm=args.model)

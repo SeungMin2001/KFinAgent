@@ -134,6 +134,18 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 
 ## 주의할 버그/교훈
 
+### 2026-09-05 DART 입력 축소
+
+- 사용자 승인으로 enhanced 기본 DART를 구조화 전체 재무제표(CFS/OFS) + 공시당 최대
+  12,000자 원문 발췌로 변경. 원문 ZIP/텍스트와 재무 API 응답은 artifacts/dart_sources에
+  SHA256으로 보존. 자동 캐시 fallback 없음.
+- 구조화 응답의 접수번호/기업/회계연도/보고서코드 불일치 시 중단. 공식 013은 해당 범위
+  자료 없음으로 명시하며 네트워크 오류는 실패. 과거 vintage 보장과는 별개.
+- 삼성전자 2026-08-19 실제 DART 확인 성공. 구조화 JSON 반복키 제거 뒤 재무 입력 약 8만 자,
+  최근 공시 약 3,800자. 새 LLM 토론/RunPod 실행은 하지 않아 토큰 절감 실측은 아직 없음.
+- 계좌/정책별 최종 판단 재사용은 계좌 문맥을 바꾸므로 구현하지 않음.
+- DART 네트워크 예외의 인증키 URL 노출을 차단. 이전 출력 키는 재발급 권고.
+
 ### 공개용 두 구간 평가 진행 (2026-09-04)
 
 - 후속 안정화: `prepare_global_evidence.py`로 실제 날짜별 글로벌 근거를 수집·고정하고
@@ -151,9 +163,12 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
   MACD +184.49%; B BuyHold -32.75%, MACD -9.09%, RSI -4.32%, 현금 0%.
 - `docs/BENCHMARK_REGIMES.md`, `docs/benchmark_results/regimes.json`, 구간별 SVG에 결과 기록.
   로컬 종합: artifacts/benchmarks/regimes_20260904_215552_020361/SUITE_v2.html.
-- AI 2회 smoke 실행은 수집 HTTP 오류로 중단; 후속 글로벌 근거 단독 진단 GDELT 429.
-  LLM 토론/새 AI 성과 없음. 뉴스 누락 fallback 금지. RunPod health 200 확인만 완료.
-- benchmark runner에 모델별 usage_metadata 계측 추가. 성공 실행 전이므로 비용 측정값은 없음.
+- 실패 뒤 8/19 글로벌 근거를 실제 snapshot으로 고정해 Agent/Agent+Kronos 각 1회 smoke 완료.
+  둘 다 미보유 계좌 Hold→WAIT. 2거래일 수익률 0%, 같은 기간 BuyHold +9.42%이나 성능표본 아님.
+  RunPod health와 실제 Kronos 예측 호출 모두 성공.
+- provider 보고 토큰: Agent 682,937개, Agent+Kronos 700,640개. DART 원문 분할/합성 비용이 과도해
+  본 AI suite는 중단 상태. 후속 benchmark 응답별 기본 출력 상한 4,096 추가(총요금 상한 아님).
+  판단당 근거 300,000자 초과 시 LLM 전 중단하며 명시적으로만 상향 가능.
 - 전체 토론 cap 기본 0인 suite로 대량 LLM 호출 방지. 그래프 수 cap은 토큰/요금 cap이 아님.
 - 후속 AI suite 반복/정책 비교는 근거 공급 복구 및 비용 확인 후 진행. README 복원/실거래 구현 안 함.
 

@@ -127,6 +127,8 @@ def main():
     parser.add_argument("--policies", nargs="+", choices=["step", "binary"], default=["step"])
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--max-total-agent-calls", type=int, default=0)
+    parser.add_argument("--max-output-tokens", type=int, default=4096)
+    parser.add_argument("--max-evidence-chars", type=int, default=300_000)
     parser.add_argument("--bars-from", type=Path)
     parser.add_argument("--global-risk-from", type=Path, help="Prepared global snapshots shared across conditions")
     parser.add_argument("--run", action="store_true")
@@ -146,6 +148,8 @@ def main():
         "jobs": jobs,
         "agent_graph_calls_upper_bound": graphs,
         "note": "Graph count excludes internal LLM chunk calls. No token or dollar guarantee.",
+        "max_output_tokens_per_response": args.max_output_tokens,
+        "max_evidence_chars_per_decision": args.max_evidence_chars,
     }
     if not args.run:
         print(json.dumps(suite, indent=2, ensure_ascii=False))
@@ -199,7 +203,15 @@ def main():
                 str(bars_source),
             ]
             if any(s.startswith("agents") for s in strategies):
-                command += ["--global-risk", "--max-agent-calls", str(args.max_total_agent_calls)]
+                command += [
+                    "--global-risk",
+                    "--max-agent-calls",
+                    str(args.max_total_agent_calls),
+                    "--max-output-tokens",
+                    str(args.max_output_tokens),
+                    "--max-evidence-chars",
+                    str(args.max_evidence_chars),
+                ]
                 if args.global_risk_from:
                     command += ["--global-risk-from", str(args.global_risk_from)]
             run = run_child(command)

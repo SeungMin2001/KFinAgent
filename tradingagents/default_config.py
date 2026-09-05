@@ -145,6 +145,7 @@ DEFAULT_CONFIG = _apply_env_overrides({
     ],
     "korean_disclosure_lookback_days": 45,
     "korean_disclosure_limit": 3,
+    "korean_dart_compact": True,
     "korean_disclosure_chunk_chars": 60_000,
     "korean_us_macro_lookback_days": 370,
     "korean_ecos_lookback_days": 400,

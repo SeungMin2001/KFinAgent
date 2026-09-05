@@ -287,6 +287,7 @@ def enhanced_korean_evidence(
                 as_of,
                 lookback_days=int(settings.get("korean_disclosure_lookback_days", 45)),
                 limit=int(settings.get("korean_disclosure_limit", 3)),
+                compact=bool(settings.get("korean_dart_compact", True)),
             ),
             us_macro_context(
                 as_of,
@@ -312,7 +313,9 @@ def enhanced_korean_evidence(
         snapshot_dir = settings.get("global_risk_snapshot_dir")
         sections.append(read_snapshot(snapshot_dir, as_of) if snapshot_dir else global_risk_context(as_of))
     if settings.get("enable_periodic_fundamentals", True):
-        sections.append(periodic_fundamentals_context(symbol, as_of))
+        sections.append(periodic_fundamentals_context(
+            symbol, as_of, compact=bool(settings.get("korean_dart_compact", True))
+        ))
     kronos_mode = str(settings.get("kronos_mode", "disabled"))
     if kronos_mode != "disabled":
         if market_bars is None:

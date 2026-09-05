@@ -1,0 +1,41 @@
+{
+  "status": "complete_smoke_only",
+  "git_commit": "174f8243f177d6392d933499d45a99dc2d469722",
+  "symbol": "005930",
+  "decision_date": "2026-08-19",
+  "evaluation_start": "2026-08-20",
+  "evaluation_end": "2026-08-21",
+  "sessions": 2,
+  "cost_bps_per_side": 10,
+  "initial_exposure": 0,
+  "allocation_policy": "step",
+  "strategies": {
+    "buy_hold": {
+      "return_pct": 9.42365027968144
+    },
+    "agents": {
+      "signal": "Hold",
+      "action": "WAIT",
+      "return_pct": 0.0,
+      "input_tokens": 596717,
+      "output_tokens": 86220,
+      "total_tokens": 682937,
+      "cache_read_tokens": 0
+    },
+    "agents_kronos": {
+      "signal": "Hold",
+      "action": "WAIT",
+      "return_pct": 0.0,
+      "input_tokens": 608504,
+      "output_tokens": 92136,
+      "total_tokens": 700640,
+      "cache_read_tokens": 392848
+    }
+  },
+  "limitations": [
+    "Pipeline smoke test only: two sessions and one decision per Agent strategy",
+    "Provider-reported tokens are not billed cost",
+    "Historical replay is not strict point-in-time or out-of-sample validation",
+    "No performance conclusion is supported"
+  ]
+}

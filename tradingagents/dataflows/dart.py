@@ -12,10 +12,23 @@ from xml.etree import ElementTree
 
 import requests
 
+from .dart_compact import archive_content, compact_document, financial_context
 from .errors import VendorNotConfiguredError
 
 _BASE_URL = "https://opendart.fss.or.kr/api"
 _MAX_ARCHIVE_BYTES = 20_000_000
+
+
+def _get(path: str, *, timeout: int = 30, **params):
+    try:
+        response = requests.get(
+            f"{_BASE_URL}/{path}", params={"crtfc_key": _key(), **params}, timeout=timeout
+        )
+        response.raise_for_status()
+        return response
+    except requests.RequestException:
+        # Requests exceptions contain the authentication key in their URL.
+        raise RuntimeError(f"OpenDART transport failed: {path}") from None
 
 
 def _key() -> str:
@@ -26,8 +39,7 @@ def _key() -> str:
 
 
 def _json(path: str, *, allow_no_data: bool = False, **params) -> dict:
-    response = requests.get(f"{_BASE_URL}/{path}", params={"crtfc_key": _key(), **params}, timeout=30)
-    response.raise_for_status()
+    response = _get(path, **params)
     payload = response.json()
     if allow_no_data and payload.get("status") == "013":
         return payload
@@ -40,8 +52,7 @@ def resolve_corp_code(stock_code: str) -> str:
     """Resolve a six-digit KRX code through OpenDART's official corp-code file."""
     if not re.fullmatch(r"\d{6}", stock_code):
         raise ValueError("stock_code must be six digits")
-    response = requests.get(f"{_BASE_URL}/corpCode.xml", params={"crtfc_key": _key()}, timeout=60)
-    response.raise_for_status()
+    response = _get("corpCode.xml", timeout=60)
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
         xml = archive.read(archive.namelist()[0]).decode("utf-8", errors="replace")
     root = ElementTree.fromstring(xml)
@@ -85,12 +96,7 @@ def disclosure_document(receipt_no: str) -> str:
     """
     if not re.fullmatch(r"\d{14}", receipt_no):
         raise ValueError("OpenDART receipt_no must be 14 digits")
-    response = requests.get(
-        f"{_BASE_URL}/document.xml",
-        params={"crtfc_key": _key(), "rcept_no": receipt_no},
-        timeout=60,
-    )
-    response.raise_for_status()
+    response = _get("document.xml", rcept_no=receipt_no, timeout=60)
     try:
         archive = zipfile.ZipFile(io.BytesIO(response.content))
     except zipfile.BadZipFile as exc:
@@ -105,6 +111,8 @@ def disclosure_document(receipt_no: str) -> str:
         raise RuntimeError(
             f"OpenDART original document exceeds {_MAX_ARCHIVE_BYTES:,} bytes: {receipt_no}"
         )
+
+    archive_content(receipt_no, "original.zip", response.content)
 
     documents = []
     for item in members:
@@ -125,15 +133,16 @@ def disclosure_document(receipt_no: str) -> str:
     return "\n\n".join(documents)
 
 
-def periodic_fundamentals_context(stock_code: str, as_of: str) -> str:
+def periodic_fundamentals_context(stock_code: str, as_of: str, *, compact: bool = False) -> str:
     """Select a periodic filing independently of the recent-disclosure quota.
 
     Exclude the analysis date because list.json supplies dates, not intraday
     publication times. Never use today's final-report flag in a past replay.
     """
     end = date.fromisoformat(as_of) - timedelta(days=1)
+    corp_code = resolve_corp_code(stock_code)
     payload = _json(
-        "list.json", allow_no_data=True, corp_code=resolve_corp_code(stock_code),
+        "list.json", allow_no_data=True, corp_code=corp_code,
         bgn_de=(end - timedelta(days=550)).strftime("%Y%m%d"),
         end_de=end.strftime("%Y%m%d"), pblntf_ty="A", last_reprt_at="N",
         sort="date", sort_mth="desc", page_count=100,
@@ -157,16 +166,24 @@ def periodic_fundamentals_context(stock_code: str, as_of: str) -> str:
         raise RuntimeError("No periodic DART filing available; fundamentals collection stopped")
     period, _, receipt, selected = max(candidates, key=lambda x: x[:3])
     document = disclosure_document(receipt)
+    content = (
+        financial_context(corp_code, period, receipt, _json)
+        + "\n\n### Selected original passages\n"
+        + compact_document(receipt, document)
+        if compact else document
+    )
     return "\n\n".join([
         "## OpenDART periodic fundamentals (separate financial-report selection)",
         f"- Analysis date: {as_of}; filing cutoff: {end}; fiscal period: {period[0]}-{period[1]:02d}",
         f"- Selected report: {selected['report_nm']}; received: {selected['rcept_dt']}",
         f"- Source: https://dart.fss.or.kr/dsaf001/main.do?rcpNo={receipt}",
-        "- Latest fiscal period, then latest submission within cutoff. Full extracted text, not a computed financial ratio feed.",
+        "- Latest fiscal period, then latest submission within cutoff. "
+        + ("Structured financial rows plus explicitly selected passages; full source archived."
+           if compact else "Full extracted text, not a computed financial ratio feed."),
         "- Preserve consolidated versus separate accounts, reporting periods and units. Do not infer missing figures. "
         "Correction-only attachments may not contain complete statements; disclose this rather than assume completeness. "
         "The API does not prove the original document was never revised after retrieval-date cutoff.",
-        document,
+        content,
     ])
 
 
@@ -176,6 +193,7 @@ def disclosure_context(
     *,
     lookback_days: int = 45,
     limit: int = 3,
+    compact: bool = False,
 ) -> str:
     """Render metadata plus complete visible text for selected recent filings."""
     disclosures = recent_disclosures(stock_code, as_of, lookback_days=lookback_days, limit=limit)
@@ -186,7 +204,8 @@ def disclosure_context(
         "",
         f"- Window: {lookback_days} days ending {as_of}",
         f"- Selected filings: {len(disclosures)} (limit {limit})",
-        "- Every selected filing below includes its complete extracted visible text; no silent truncation is allowed.",
+        ("- Selected passages only; full source archives and omitted-line counts are recorded."
+         if compact else "- Every selected filing below includes its complete extracted visible text; no silent truncation is allowed."),
     ]
     for item in disclosures:
         document = disclosure_document(item["receipt_no"])
@@ -197,7 +216,7 @@ def disclosure_context(
             f"- Filer: {item['filer']}",
             f"- Source: {item['url']}",
             "",
-            document,
+            compact_document(item["receipt_no"], document) if compact else document,
         ]
     lines += ["", "Treat the original filing text as the source of truth and distinguish facts from interpretation."]
     return "\n".join(lines)
