@@ -96,7 +96,12 @@ def main():
         help="Pre-LLM character guard per symbol/date; deliberately raise after reviewing the corpus",
     )
     parser.add_argument("--global-risk-from", type=Path, help="Explicit directory of prepared dated real global snapshots; never falls back to live")
-    parser.add_argument("--allocation-policy", choices=["step", "binary"], default="step")
+    parser.add_argument(
+        "--allocation-policy",
+        choices=["step", "binary", "tier"],
+        default="step",
+        help="step/binary are execution overlays; tier maps Buy/Overweight/Hold/Underweight/Sell to 100/75/50/25/0%%",
+    )
     parser.add_argument(
         "--initial-exposure",
         type=float,
@@ -165,7 +170,7 @@ def main():
             "Adjusted-price fractional units; no dividends, liquidity/limit-up queue or partial-fill simulation",
             "No live account; separate simulated account per strategy; no external prior-report memory",
             "Close-time decision, next available session open; zero-volume execution deferred",
-            "Step sizing: Buy +50pp / Overweight +25pp / Underweight -25pp / Sell 0; binary optional; Hold preserves units; REVIEW stops",
+            "Allocation policy is pre-declared: step changes target by 50/25pp, binary uses full/cash, tier maps Buy/Overweight/Hold/Underweight/Sell to 100/75/50/25/0%; REVIEW stops",
             "Kronos: 40 candles ->12 weekdays, T=.6 top_p=.9 10 independent paths; KRX holidays not modeled by service",
             "Every strategy uses the same decision cadence; this is a controlled ablation, not optimized rule trading",
             "No winner selection or parameter tuning on this evaluation window; short pilot does not support superiority claims",
@@ -218,6 +223,11 @@ def main():
         (output / "FAILED.json").write_text(json.dumps(failure))
         manifest.update(failure)
         (output / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+        progress_path = output / "PROGRESS.json"
+        if progress_path.exists():
+            progress = json.loads(progress_path.read_text())
+            progress.update(status="failed", failure=failure, updated_at=datetime.now(timezone.utc).isoformat())
+            progress_path.write_text(json.dumps(progress, ensure_ascii=False, indent=2))
         print(
             f"평가 중단: {json.dumps(failure)}. 부분 결과를 최종 성과로 집계하지 않았습니다.",
             file=sys.stderr,
@@ -282,6 +292,20 @@ def execute(args, strategies, manifest, output):
             flush=True,
         )
         raise ValueError("Agent budget cap exceeded")
+    progress_path = output / "PROGRESS.json"
+    progress = {
+        "status": "running",
+        "total_agent_decisions": call_count,
+        "completed_agent_decisions": 0,
+        "active": None,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    def write_progress():
+        progress["updated_at"] = datetime.now(timezone.utc).isoformat()
+        progress_path.write_text(json.dumps(progress, ensure_ascii=False, indent=2))
+
+    write_progress()
     if args.global_risk_from and any(s.startswith("agents") for s in strategies):
         from tradingagents.dataflows.evidence_snapshot import read_snapshot
         reference = next(iter(frames.values()))
@@ -390,21 +414,28 @@ def execute(args, strategies, manifest, output):
                 if args.model:
                     overrides.update(deep_think_llm=args.model, quick_think_llm=args.model)
 
-                def progress(event, stage, result=None):
+                def report_stage(event, stage, result=None):
                     manifest["last_agent_stage"] = {
                         "strategy": strategy, "symbol": symbol, "date": as_of,
                         "stage": stage, "event": event,
                     }
+                    progress["active"] = {
+                        "strategy": strategy,
+                        "symbol": symbol,
+                        "date": as_of,
+                        "stage": stage,
+                        "event": event,
+                    }
+                    write_progress()
                     if event == "started":
                         print(f"  [Agent] {stage}", flush=True)
 
-                graph = create_korean_stock_graph(overrides, progress_callback=progress)
-                sizing_rule = (
-                    "Buy increases exposure by 50 percentage points; Overweight by 25; "
-                    "Underweight reduces it by 25; Sell exits. Targets are clipped to [0%,100%]."
-                    if args.allocation_policy == "step"
-                    else "Buy/Overweight enters full long; Underweight/Sell exits."
-                )
+                graph = create_korean_stock_graph(overrides, progress_callback=report_stage)
+                sizing_rule = {
+                    "step": "Buy increases exposure by 50 percentage points; Overweight by 25; Underweight reduces it by 25; Sell exits. Targets are clipped to [0%,100%].",
+                    "binary": "Buy/Overweight enters full long; Underweight/Sell exits.",
+                    "tier": "The five native ratings map directly to target exposure: Buy 100%, Overweight 75%, Hold 50%, Underweight 25%, Sell 0%. Rebalance to that target at the next session open.",
+                }[args.allocation_policy]
                 with audited_usage(output, f"{strategy}_{symbol}_{as_of}") as usage:
                     state, signal = graph.propagate(
                         symbol,
@@ -414,7 +445,8 @@ def execute(args, strategies, manifest, output):
                         + json.dumps(account)
                         + "; fractional adjusted units. "
                         + sizing_rule
-                        + " Hold places no order: WAIT if flat, HOLD_POSITION if invested. No shorting. "
+                        + (" Hold targets 50% exposure in this tier evaluation." if args.allocation_policy == "tier" else " Hold places no order: WAIT if flat, HOLD_POSITION if invested.")
+                        + " No shorting. "
                         "Separate market outlook from executable account action. A bearish view while flat "
                         "does not require shorting. Do not force trades or require all evidence to agree.",
                         historical_report_context="Benchmark isolated run: no external historical reports.",
@@ -439,6 +471,9 @@ def execute(args, strategies, manifest, output):
                         ensure_ascii=False,
                     )
                 )
+                progress["completed_agent_decisions"] += 1
+                progress["active"] = None
+                write_progress()
                 return None if abs(target - account["target"]) < 1e-10 else target
 
             curve, trades = simulate(
@@ -461,6 +496,8 @@ def execute(args, strategies, manifest, output):
     manifest["finished_at"] = datetime.now(timezone.utc).isoformat()
     manifest["agent_graph_calls"] = call_count
     summary = write_report(output, curves, all_trades, manifest, len(args.symbols) * 1_000_000)
+    progress.update(status="complete", active=None)
+    write_progress()
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     print(f"보고서: {output / 'BENCHMARK.html'}", flush=True)
 

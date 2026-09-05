@@ -79,7 +79,7 @@ AI 비교는 `--strategies agents agents_kronos --policies step binary --repeats
 실행에는 총 토론 상한 `--max-total-agent-calls`를 명시해야 하며 기본값 0은 대량 LLM 실행을 막는다.
 토론 횟수 상한은 토큰/요금 상한이 아니다. 정기보고서 분할 분석의 비용 계측 후 본 평가 범위를 고정한다.
 
-## AI 실행 상태 (2026-09-04)
+## AI 실행 상태 (2026-09-06)
 
 GDELT 429 뒤 실제 8/19 글로벌 근거를 별도 snapshot으로 고정하고, 삼성전자 8/19 판단을
 8/20~8/21에 적용하는 Agent/Agent+Kronos 1회씩의 배관 smoke test를 완료했다.
@@ -96,8 +96,15 @@ Agent+Kronos 700,640개(입력 608,504·출력 92,136)였다. 두 번째 실행 
 기계 판독 smoke 결과: [agent_smoke.json](benchmark_results/agent_smoke.json).
 
 2026-09-05 후속 수정: 원문을 보존하면서 구조화 전체 재무제표와 출처 줄 번호가 있는
-공시 발췌를 기본 입력으로 전환했다. 삼성전자 실제 DART 수집과 변환은 검증했으며,
-수정 후 LLM 토큰·판단·성과는 아직 재측정하지 않았다. 위 smoke 숫자는 수정 전 결과다.
+공시 발췌를 기본 입력으로 전환했다. 삼성전자·SK하이닉스 실제 DART 수집과 변환 뒤
+새 Agent/Agent+Kronos 짝 smoke를 완료했다. Agent 단독은 종목당 194,073·203,403 토큰,
+Kronos 포함은 199,050·215,607 토큰이었다. 기존 원문 전체 방식의 약 68만~70만 토큰보다
+작지만, 이 수치도 본 평가 전에 더 줄여야 한다.
 
-RunPod health와 실제 Kronos 예측 호출은 모두 성공했다. 다만 이것은 모델 예측 정확도나
-Agent+Kronos 우월성을 입증하지 않는다. 전체 A/B 구간 AI 결과는 여전히 미실행이다.
+두 전략 모두 두 종목에서 `Hold → WAIT`였다. Kronos의 12거래일 중앙 경로는 삼성전자
++2.43%(상승 경로 비율 0.60), SK하이닉스 -10.03%(0.20)였지만 최종 계좌 행동은 바뀌지 않았다.
+Kronos가 연결됐다는 사실과 유효한 매매 기여는 별개다. [짝 비교 JSON](benchmark_results/agent_kronos_pair_20260819.json)은
+각 종목의 신호·토큰·예측 범위를 기계 판독 형태로 담는다.
+
+RunPod health와 실제 Kronos 예측 호출은 모두 성공했다. 다만 이 2거래일·종목당 1판단 결과는
+모델 예측 정확도나 Agent+Kronos 우월성을 입증하지 않는다. 전체 A/B 구간 AI 결과는 여전히 미실행이다.

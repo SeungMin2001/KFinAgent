@@ -9,10 +9,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BASELINES = ("buy_hold", "cash", "sma", "macd", "rsi")
+BASELINES = ("buy_hold", "cash", "balanced_50", "sma", "macd", "rsi")
 STRATEGY_LABELS = {
     "buy_hold": "매수 후 보유",
     "cash": "현금 유지·기존 보유 청산",
+    "balanced_50": "50% 주식 / 50% 현금",
     "sma": "SMA 20/60",
     "macd": "MACD",
     "rsi": "RSI 14",
@@ -20,7 +21,11 @@ STRATEGY_LABELS = {
     "agents": "한국형 Agents",
     "agents_kronos": "Agents + Kronos",
 }
-SYMBOL_LABELS = {"005930": "삼성전자 (005930)", "000660": "SK하이닉스 (000660)"}
+SYMBOL_LABELS = {
+    "005930": "삼성전자 (005930)",
+    "000660": "SK하이닉스 (000660)",
+    "196170": "알테오젠 (196170)",
+}
 
 
 def validate_bars(frame: pd.DataFrame) -> pd.DataFrame:
@@ -47,6 +52,8 @@ def baseline_target(name: str, history: pd.DataFrame, current: float) -> float:
         return 0.0
     if name == "buy_hold":
         return 1.0
+    if name == "balanced_50":
+        return 0.5
     if len(close) < 60:
         raise ValueError("At least 60 warm-up sessions required")
     if name == "sma":
@@ -66,17 +73,29 @@ def baseline_target(name: str, history: pd.DataFrame, current: float) -> float:
 def rating_target(signal: str, current: float, policy: str = "step") -> float:
     if not np.isfinite(current) or not 0 <= current <= 1:
         raise ValueError("Current exposure must be in [0,1]")
-    if policy not in {"step", "binary"}:
+    if policy not in {"step", "binary", "tier"}:
         raise ValueError("Unknown allocation policy")
+    normalized = signal.lower()
+    if policy == "tier":
+        targets = {
+            "buy": 1.0,
+            "overweight": 0.75,
+            "hold": 0.5,
+            "underweight": 0.25,
+            "sell": 0.0,
+        }
+        if normalized in targets:
+            return targets[normalized]
+        raise ValueError(f"Untradeable agent signal: {signal!r}; benchmark stopped")
     if policy == "step":
         changes = {"buy": 0.5, "overweight": 0.25, "underweight": -0.25}
-        if signal.lower() in changes:
-            return float(np.clip(current + changes[signal.lower()], 0, 1))
-    if signal.lower() in {"buy", "overweight"}:
+        if normalized in changes:
+            return float(np.clip(current + changes[normalized], 0, 1))
+    if normalized in {"buy", "overweight"}:
         return 1.0
-    if signal.lower() in {"sell", "underweight"}:
+    if normalized in {"sell", "underweight"}:
         return 0.0
-    if signal.lower() == "hold":
+    if normalized == "hold":
         return current
     raise ValueError(f"Untradeable agent signal: {signal!r}; benchmark stopped")
 

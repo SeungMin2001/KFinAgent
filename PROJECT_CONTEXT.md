@@ -166,8 +166,13 @@ KIS 접근토큰은 분당 1회 발급 제한이 있다. 연속 실행에서 `EG
 - 실패 뒤 8/19 글로벌 근거를 실제 snapshot으로 고정해 Agent/Agent+Kronos 각 1회 smoke 완료.
   둘 다 미보유 계좌 Hold→WAIT. 2거래일 수익률 0%, 같은 기간 BuyHold +9.42%이나 성능표본 아님.
   RunPod health와 실제 Kronos 예측 호출 모두 성공.
-- provider 보고 토큰: Agent 682,937개, Agent+Kronos 700,640개. DART 원문 분할/합성 비용이 과도해
-  본 AI suite는 중단 상태. 후속 benchmark 응답별 기본 출력 상한 4,096 추가(총요금 상한 아님).
+- 2026-09-05 구조화 DART 전환 후 8/19 판단/8/20~21 적용, 005930·000660 Agent 및
+  Agent+Kronos 각 1회씩 재검증 완료. 네 판단 모두 Hold→WAIT, 2일 합산 BuyHold +8.29%이나
+  성능 표본 아님. Kronos 12일 중앙경로: 005930 +2.43%/상승 0.60, 000660 -10.03%/0.20;
+  최종 행동 변화 없음. 공개용 docs/benchmark_results/agent_kronos_pair_20260819.json 생성.
+- provider 보고 토큰: 구조화 후 Agent 194,073~203,403개, Agent+Kronos 199,050~215,607개.
+  기존 약 68만~70만보다 감소했으나 전체 AI suite 전 비용 최적화가 더 필요.
+  후속 benchmark 응답별 기본 출력 상한 4,096 추가(총요금 상한 아님).
   판단당 근거 300,000자 초과 시 LLM 전 중단하며 명시적으로만 상향 가능.
 - 전체 토론 cap 기본 0인 suite로 대량 LLM 호출 방지. 그래프 수 cap은 토큰/요금 cap이 아님.
 - 후속 AI suite 반복/정책 비교는 근거 공급 복구 및 비용 확인 후 진행. README 복원/실거래 구현 안 함.

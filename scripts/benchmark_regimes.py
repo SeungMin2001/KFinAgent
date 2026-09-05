@@ -105,7 +105,7 @@ def render(results):
     page = (
         """<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Two-regime benchmark</title>
 <style>body{font:15px system-ui;max-width:1100px;margin:32px auto;padding:20px;color:#182538;background:#f5f7fb}h1{font-size:30px}h2{font-size:17px}section{background:white;border:1px solid #dce2e9;border-radius:10px;padding:22px;margin:20px 0;overflow:auto}table{border-collapse:collapse;width:100%;white-space:nowrap}td,th{padding:10px;text-align:right;border-bottom:1px solid #eee}td:first-child,th:first-child{text-align:left}p{line-height:1.7}</style>
-<h1>삼성전자 · SK하이닉스 / 두 구간 평가</h1><p>1/1~6/22와 7/1~종료일을 분리. 6/23~6/30 제외. 두 종목 독립 계좌 합산.<br>미래 성과·한국 시장 전체 대표성·AI 우월성을 입증하지 않습니다. 동일 조건 안에서만 전략을 비교하세요.<br>비용은 편도 가정치이며 배당 제외. 초기 보유는 평가 전날 종가 기준의 동일 자산 부여입니다.</p>"""
+<h1>상승장 · 하락장 분리 평가</h1><p>1/1~6/22와 7/1~종료일을 분리. 6/23~6/30 제외. 두 종목 독립 계좌 합산.<br>미래 성과·한국 시장 전체 대표성·AI 우월성을 입증하지 않습니다. 동일 조건 안에서만 전략을 비교하세요.<br>비용은 편도 가정치이며 배당 제외. 초기 보유는 평가 전날 종가 기준의 동일 자산 부여입니다.</p>"""
         + "".join(figures)
         + "".join(sections)
         + "</html>"
@@ -116,35 +116,47 @@ def render(results):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--end", default=(date.today() - timedelta(days=1)).isoformat())
+    parser.add_argument("--symbols", nargs="+", default=["005930", "196170"])
+    parser.add_argument("--cadence", type=int, default=21)
     parser.add_argument(
         "--strategies",
         nargs="+",
         choices=[*BASELINES, "kronos", "agents", "agents_kronos"],
         default=list(BASELINES),
     )
-    parser.add_argument("--costs", nargs="+", type=float, default=[10, 30, 50])
-    parser.add_argument("--exposures", nargs="+", type=float, default=[0, 0.5])
-    parser.add_argument("--policies", nargs="+", choices=["step", "binary"], default=["step"])
+    parser.add_argument("--costs", nargs="+", type=float, default=[10])
+    parser.add_argument("--exposures", nargs="+", type=float, default=[0])
+    parser.add_argument("--policies", nargs="+", choices=["step", "binary", "tier"], default=["tier"])
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--max-total-agent-calls", type=int, default=0)
     parser.add_argument("--max-output-tokens", type=int, default=4096)
     parser.add_argument("--max-evidence-chars", type=int, default=300_000)
     parser.add_argument("--bars-from", type=Path)
     parser.add_argument("--global-risk-from", type=Path, help="Prepared global snapshots shared across conditions")
+    parser.add_argument(
+        "--global-risk",
+        action="store_true",
+        help="Use only with --global-risk-from containing every decision date",
+    )
     parser.add_argument("--run", action="store_true")
     args = parser.parse_args()
+    if args.global_risk and not args.global_risk_from:
+        parser.error("--global-risk requires complete frozen snapshots via --global-risk-from")
+    if args.global_risk_from and not args.global_risk:
+        parser.error("--global-risk-from requires --global-risk")
     strategies = list(dict.fromkeys(["buy_hold", "cash", *args.strategies]))
     jobs = plan(args.end, strategies, args.costs, args.exposures, args.repeats, args.policies)
     # Calendar-day bound deliberately overestimates graph count before loading bars.
     graphs = sum(
-        ((date.fromisoformat(j["end"]) - date.fromisoformat(j["start"])).days // 12 + 1)
-        * 2
+        ((date.fromisoformat(j["end"]) - date.fromisoformat(j["start"])).days // args.cadence + 1)
+        * len(args.symbols)
         * sum(s.startswith("agents") for s in strategies)
         for j in jobs
     )
     suite = {
         "status": "planned",
-        "symbols": ["005930", "000660"],
+        "symbols": args.symbols,
+        "cadence_sessions": args.cadence,
         "jobs": jobs,
         "agent_graph_calls_upper_bound": graphs,
         "note": "Graph count excludes internal LLM chunk calls. No token or dollar guarantee.",
@@ -170,7 +182,8 @@ def main():
     save()
     try:
         bars_source = args.bars_from or run_child(
-            ["--start", "2026-01-01", "--end", args.end, "--strategies", "buy_hold", "cash"]
+            ["--start", "2026-01-01", "--end", args.end, "--symbols", *args.symbols,
+             "--strategies", "buy_hold", "cash", "balanced_50", "--cadence", str(args.cadence)]
         )
         suite["bars_source"] = str(bars_source)
         if args.global_risk_from and any(s.startswith("agents") for s in strategies):
@@ -191,6 +204,8 @@ def main():
                 job["start"],
                 "--end",
                 job["end"],
+                "--symbols",
+                *args.symbols,
                 "--strategies",
                 *strategies,
                 "--cost-bps",
@@ -199,12 +214,13 @@ def main():
                 str(job["exposure"]),
                 "--allocation-policy",
                 job["policy"],
+                "--cadence",
+                str(args.cadence),
                 "--bars-from",
                 str(bars_source),
             ]
             if any(s.startswith("agents") for s in strategies):
                 command += [
-                    "--global-risk",
                     "--max-agent-calls",
                     str(args.max_total_agent_calls),
                     "--max-output-tokens",
@@ -212,8 +228,10 @@ def main():
                     "--max-evidence-chars",
                     str(args.max_evidence_chars),
                 ]
-                if args.global_risk_from:
-                    command += ["--global-risk-from", str(args.global_risk_from)]
+                if args.global_risk:
+                    command += ["--global-risk"]
+                    if args.global_risk_from:
+                        command += ["--global-risk-from", str(args.global_risk_from)]
             run = run_child(command)
             suite["results"].append(
                 {

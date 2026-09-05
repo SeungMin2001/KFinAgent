@@ -19,6 +19,7 @@ all three agents log the same warnings when fallback fires.
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 
@@ -103,10 +104,20 @@ def invoke_structured_strict(
     """
     if structured_llm is None:
         raise RuntimeError(f"{agent_name} requires provider structured-output support")
-    try:
-        result = structured_llm.invoke(prompt)
-    except Exception as exc:
-        raise RuntimeError(f"{agent_name} structured output failed") from exc
-    if result is None:
-        raise RuntimeError(f"{agent_name} structured output returned no parsed result")
-    return render(result)
+    last_error = None
+    for attempt in range(2):
+        try:
+            result = structured_llm.invoke(prompt)
+            if result is not None:
+                return render(result)
+            last_error = RuntimeError("structured output returned no parsed result")
+        except Exception as exc:  # Preserve the schema contract; only retry it.
+            last_error = exc
+        if attempt == 0:
+            logger.warning(
+                "%s: structured output attempt failed (%s); retrying once with the same schema",
+                agent_name,
+                type(last_error).__name__,
+            )
+            time.sleep(1)
+    raise RuntimeError(f"{agent_name} structured output failed") from last_error

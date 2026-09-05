@@ -13,6 +13,11 @@ def test_step_allocation_and_legacy_policy():
     assert rating_target("Buy", 0.8) == 1
     assert rating_target("Buy", 0, "binary") == 1
     assert rating_target("Underweight", 0, "step") == 0
+    assert rating_target("Buy", 0, "tier") == 1
+    assert rating_target("Overweight", 0, "tier") == 0.75
+    assert rating_target("Hold", 0, "tier") == 0.5
+    assert rating_target("Underweight", 1, "tier") == 0.25
+    assert rating_target("Sell", 1, "tier") == 0
 
 
 def test_action_distinguishes_flat_wait_from_holding():

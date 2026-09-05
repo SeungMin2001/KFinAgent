@@ -1,0 +1,94 @@
+{
+  "status": "complete_smoke_only",
+  "paired_conditions": {
+    "start": "2026-08-20",
+    "end": "2026-08-21",
+    "symbols": [
+      "005930",
+      "000660"
+    ],
+    "cost_bps": 10,
+    "cadence_sessions": 12,
+    "initial_exposure": 0,
+    "allocation_policy": "step"
+  },
+  "agent_run": "20260905_190951_888770",
+  "agents_kronos_run": "20260906_002920_695643",
+  "rows": [
+    {
+      "symbol": "005930",
+      "agent": {
+        "signal": "Hold",
+        "action": "WAIT",
+        "target_exposure": 0.0,
+        "tokens": {
+          "input_tokens": 162298,
+          "output_tokens": 31775,
+          "total_tokens": 194073
+        }
+      },
+      "agents_kronos": {
+        "signal": "Hold",
+        "action": "WAIT",
+        "target_exposure": 0.0,
+        "tokens": {
+          "input_tokens": 165751,
+          "output_tokens": 33299,
+          "total_tokens": 199050
+        }
+      },
+      "kronos_forecast": {
+        "model_id": "NeoQuasar/Kronos-base",
+        "horizon_business_days": 12,
+        "median_expected_return_pct": 2.4282,
+        "upside_frequency": 0.6,
+        "final_return_p10_p50_p90_pct": [
+          -7.307,
+          2.4282,
+          22.4938
+        ]
+      },
+      "action_changed": false
+    },
+    {
+      "symbol": "000660",
+      "agent": {
+        "signal": "Hold",
+        "action": "WAIT",
+        "target_exposure": 0.0,
+        "tokens": {
+          "input_tokens": 171221,
+          "output_tokens": 32182,
+          "total_tokens": 203403
+        }
+      },
+      "agents_kronos": {
+        "signal": "Hold",
+        "action": "WAIT",
+        "target_exposure": 0.0,
+        "tokens": {
+          "input_tokens": 180736,
+          "output_tokens": 34871,
+          "total_tokens": 215607
+        }
+      },
+      "kronos_forecast": {
+        "model_id": "NeoQuasar/Kronos-base",
+        "horizon_business_days": 12,
+        "median_expected_return_pct": -10.0263,
+        "upside_frequency": 0.2,
+        "final_return_p10_p50_p90_pct": [
+          -21.7359,
+          -10.0262,
+          19.4039
+        ]
+      },
+      "action_changed": false
+    }
+  ],
+  "limitations": [
+    "Two sessions and one decision per symbol; no performance conclusion is supported.",
+    "Kronos output is a probabilistic uncalibrated model output, not a recommendation.",
+    "Provider-reported token counts are not billed cost."
+  ]
+}
