@@ -4,13 +4,21 @@
 
 삼성전자 `005930` 같은 6자리 종목코드를 입력하면 **외국인·기관 수급, OpenDART 공시, 한국은행 경제지표**를 모읍니다. 상승·하락 리서처와 리스크 분석가가 같은 근거를 두고 토론하고, 최종 의견과 확인할 조건을 한국어 보고서에 남깁니다.
 
-[English](README.en.md) · [실행 결과](#실제-실행-결과) · [빠른 시작](#빠른-시작) · [한국 시장에 맞춘 부분](#한국-시장에-맞춘-부분) · [아키텍처와 토론](#아키텍처와-토론) · [Kronos](#kronos로-시계열-근거-추가)
+<a href="README.md"><kbd>한국어</kbd></a> <a href="README.en.md"><kbd>English</kbd></a>
+
+## 아키텍처와 토론
+
+![KStockAgents 아키텍처. 한국 데이터와 분석 역할에서 상승·하락 토론, 연구 매니저, 트레이더, 세 관점의 리스크 팀, 포트폴리오 매니저와 보고서로 연결](assets/architecture/kstockagents.svg)
+
+1. **근거 수집** · KIS 일봉을 먼저 검증합니다. 확장 모드에서는 공시·수급·거시 지표를 모아 출처와 기준일이 붙은 스냅샷을 만듭니다.
+2. **상승·하락 토론** · 분석가별 보고서가 Bull·Bear 리서처에게 전달됩니다. 양쪽이 가격·수급·공시의 충돌을 검토하고, Research Manager가 논거와 확인 조건을 정리합니다.
+3. **제안과 리스크 검토** · Trader가 제안을 작성합니다. 공격적·보수적·중립적 분석가가 가정과 리스크를 검토하고, Portfolio Manager가 최종 의견을 기록합니다. 이 흐름은 주문을 실행하지 않습니다.
 
 ## 실제 실행 결과
 
 ![삼성전자 실제 실행 차트. KIS 관측 종가, Kronos 중앙 예측 경로와 최종일 p10–p90 범위](docs/examples/samsung-005930-kronos.svg)
 
-삼성전자 `005930`, **2026-09-02 기준** 실행에서 생성된 SVG입니다. 파란색은 KIS 관측 종가, 주황색은 5일 Kronos 중앙 예측 경로, 세로 막대는 마지막 예측일의 표본 p10–p90 범위입니다. 이 실행에서 에이전트는 장기 추세와 외국인·기관 동반 순매도를 함께 검토해 **Hold** 의견을 냈습니다. [공시·수급·판단 근거 발췌](docs/examples/samsung-005930.md)
+삼성전자 `005930`, **2026-09-02 기준** 실행에서 생성된 SVG입니다. 파란색은 KIS 관측 종가, 주황색은 5일 Kronos 중앙 예측 경로, 세로 막대는 마지막 예측일의 표본 p10–p90 범위입니다. 이 실행에서 에이전트는 장기 추세와 외국인·기관 동반 순매도를 함께 검토해 **Hold** 의견을 냈습니다. 공시·수급·판단 근거 발췌는 `docs/examples/samsung-005930.md`에 있습니다.
 
 ## 빠른 시작
 
@@ -50,11 +58,11 @@ Copy-Item .env.example .env
 
 | 발급처 | 환경변수 | 필요한 모드 |
 | --- | --- | --- |
-| [한국투자증권 Open API](https://apiportal.koreainvestment.com/) | `KIS_APP_KEY`, `KIS_APP_SECRET`, `KIS_ENV` | 기본·확장. 국내 시세 조회 권한이 있는 키를 쓰고 종류에 맞게 `real` 또는 `demo` 지정 |
-| [OpenAI API](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` | 기본·확장. 기본 LLM 제공처이며, 다른 제공처와 모델은 [설정 예시](.env.example) 참고 |
-| [금융감독원 OpenDART](https://opendart.fss.or.kr/) | `DART_API_KEY` | 확장 · 공시·재무 |
-| [한국은행 ECOS](https://ecos.bok.or.kr/api/) | `ECOS_API_KEY` | 확장 · 국내 거시 지표 |
-| [FRED](https://fred.stlouisfed.org/docs/api/api_key.html) | `FRED_API_KEY` | 확장 · 미국 거시 지표 |
+| 한국투자증권 Open API (`https://apiportal.koreainvestment.com/`) | `KIS_APP_KEY`, `KIS_APP_SECRET`, `KIS_ENV` | 기본·확장. 국내 시세 조회 권한이 있는 키를 쓰고 종류에 맞게 `real` 또는 `demo` 지정 |
+| OpenAI API (`https://platform.openai.com/api-keys`) | `OPENAI_API_KEY` | 기본·확장. 기본 LLM 제공처이며, 다른 제공처와 모델은 `.env.example` 참고 |
+| 금융감독원 OpenDART (`https://opendart.fss.or.kr/`) | `DART_API_KEY` | 확장 · 공시·재무 |
+| 한국은행 ECOS (`https://ecos.bok.or.kr/api/`) | `ECOS_API_KEY` | 확장 · 국내 거시 지표 |
+| FRED (`https://fred.stlouisfed.org/docs/api/api_key.html`) | `FRED_API_KEY` | 확장 · 미국 거시 지표 |
 
 ### 3. 삼성전자 분석
 
@@ -79,7 +87,7 @@ python scripts/korean_stock_research.py 005930 --enhanced --account-mode disable
 
 ## 한국 시장에 맞춘 부분
 
-원본 [TradingAgents](https://github.com/TauricResearch/TradingAgents)의 시장·심리·뉴스·펀더멘털 역할과 토론 구조를 이어받았습니다. 원본 도식이 Yahoo Finance 시장 데이터와 소셜·뉴스를 예로 드는 자리에는 **KIS 시세·투자자 수급과 OpenDART 공시**를 연결합니다. 미국 거시 지표에 한국은행 ECOS를 더해 한국 금리와 물가를 함께 읽습니다.
+원본 TradingAgents의 시장·심리·뉴스·펀더멘털 역할과 토론 구조를 이어받았습니다. 원본 도식이 Yahoo Finance 시장 데이터와 소셜·뉴스를 예로 드는 자리에는 **KIS 시세·투자자 수급과 OpenDART 공시**를 연결합니다. 미국 거시 지표에 한국은행 ECOS를 더해 한국 금리와 물가를 함께 읽습니다.
 
 | TradingAgents 역할 | KStockAgents가 수집하고 해석하는 한국 시장 근거 |
 | --- | --- |
@@ -92,19 +100,11 @@ python scripts/korean_stock_research.py 005930 --enhanced --account-mode disable
 
 공시와 수급, 가격이 다른 방향을 가리키면 각각의 출처와 관측 기간을 남겨 토론에서 비교할 수 있게 합니다.
 
-## 아키텍처와 토론
-
-![KStockAgents 아키텍처. 한국 데이터와 분석 역할에서 상승·하락 토론, 연구 매니저, 트레이더, 세 관점의 리스크 팀, 포트폴리오 매니저와 보고서로 연결](assets/architecture/kstockagents.svg)
-
-1. **근거 수집** · KIS 일봉을 먼저 검증합니다. 확장 모드에서는 공시·수급·거시 지표를 모아 출처와 기준일이 붙은 스냅샷을 만듭니다.
-2. **상승·하락 토론** · 분석가별 보고서가 Bull·Bear 리서처에게 전달됩니다. 양쪽이 가격·수급·공시의 충돌을 검토하고, Research Manager가 논거와 확인 조건을 정리합니다.
-3. **제안과 리스크 검토** · Trader가 제안을 작성합니다. 공격적·보수적·중립적 분석가가 가정과 리스크를 검토하고, Portfolio Manager가 최종 의견을 기록합니다. 이 흐름은 주문을 실행하지 않습니다.
-
 ## Kronos로 시계열 근거 추가
 
-별도로 띄운 [Kronos](https://github.com/shiyu-coder/Kronos) 서비스에 **검증된 KIS 일봉 OHLCVA**를 보냅니다. 공시·수급·거시 지표는 LLM 분석가가 읽습니다. Kronos의 기본 설정은 **과거 40개 일봉 → 미래 12개 일봉, 10개 표본 경로**입니다. 시계열 분석가는 중앙 예측과 표본 분포를 해석하고, 리서처와 리스크 팀은 이 결과를 다른 근거와 함께 검토합니다.
+별도로 띄운 Kronos 서비스에 **검증된 KIS 일봉 OHLCVA**를 보냅니다. 공시·수급·거시 지표는 LLM 분석가가 읽습니다. Kronos의 기본 설정은 **과거 40개 일봉 → 미래 12개 일봉, 10개 표본 경로**입니다. 시계열 분석가는 중앙 예측과 표본 분포를 해석하고, 리서처와 리스크 팀은 이 결과를 다른 근거와 함께 검토합니다.
 
-1. [Kronos 서버 배포 가이드](docs/KRONOS_RUNPOD.md)에 따라 서버를 띄웁니다.
+1. `docs/KRONOS_RUNPOD.md`의 배포 가이드에 따라 서버를 띄웁니다.
 2. 로컬 `.env`에 `KRONOS_API_URL=https://<호스트>/v1/forecast`와 `KRONOS_API_KEY`를 입력합니다.
 3. 아래처럼 확장 분석을 실행합니다. 예측 수집에 실패하면 오류가 표시됩니다.
 
@@ -112,8 +112,8 @@ python scripts/korean_stock_research.py 005930 --enhanced --account-mode disable
 python scripts/korean_stock_research.py 005930 --enhanced --account-mode disabled --kronos-mode remote
 ```
 
-현재 미래 날짜는 요일 기준 영업일로 생성되므로 KRX 휴장일과 어긋날 수 있습니다. 성과 검토는 [초기 파일럿](docs/BENCHMARK_RESULTS.md)과 [구간별 사례 분석](docs/BENCHMARK_REGIMES.md)을 참고하세요. 과거 사례 결과만으로 수익 우위나 Kronos의 추가 효과를 일반화할 수 없습니다.
+현재 미래 날짜는 요일 기준 영업일로 생성되므로 KRX 휴장일과 어긋날 수 있습니다. 성과 검토는 초기 파일럿 (`docs/BENCHMARK_RESULTS.md`)과 구간별 사례 분석 (`docs/BENCHMARK_REGIMES.md`)을 참고하세요. 과거 사례 결과만으로 수익 우위나 Kronos의 추가 효과를 일반화할 수 없습니다.
 
 ## 출처와 라이선스
 
-팀 구분과 토론 흐름을 그린 아키텍처는 [TradingAgents의 원본 도식](https://github.com/TauricResearch/TradingAgents/blob/main/assets/schema.png)을 참고해 한국 시장 구현에 맞게 제작했습니다. [Apache 2.0](LICENSE) · [원본 저작권 고지](NOTICE) · [이슈](https://github.com/SeungMin2001/KStockAgents/issues)
+팀 구분과 토론 흐름을 그린 아키텍처는 TradingAgents의 원본 도식 (`https://github.com/TauricResearch/TradingAgents/blob/main/assets/schema.png`)을 참고해 한국 시장 구현에 맞게 제작했습니다. Apache 2.0 (`LICENSE`) · 원본 저작권 고지 (`NOTICE`)
