@@ -1,11 +1,9 @@
 """End-to-end smoke for structured-output agents against a real LLM provider.
 
 Runs the three decision-making agents (Research Manager, Trader, Portfolio
-Manager) directly with their structured-output bindings and prints the
-typed Pydantic instance + the rendered markdown for each.  Use this to
-verify a provider's native structured-output mode (json_schema for
-OpenAI / xAI / DeepSeek / Qwen / GLM, response_schema for Gemini, tool-use
-for Anthropic) returns clean instances on the schemas we ship.
+Manager) with the same model catalog and structured-output bindings as the
+research workflow. It prints the resulting Markdown and checks the required
+headings. An actual run sends requests to the selected LLM provider.
 
 Usage:
     OPENAI_API_KEY=... python scripts/smoke_structured_output.py openai
@@ -28,16 +26,9 @@ from tradingagents.agents.managers.research_manager import create_research_manag
 from tradingagents.agents.trader.trader import create_trader
 from tradingagents.graph.signal_processing import SignalProcessor
 from tradingagents.llm_clients import create_llm_client
+from tradingagents.llm_clients.model_catalog import get_model_options
 
-PROVIDER_DEFAULTS = {
-    "openai": ("gpt-5.4-mini", None),
-    "google": ("gemini-3.5-flash", None),
-    "anthropic": ("claude-sonnet-4-6", None),
-    "deepseek": ("deepseek-flash", None),
-    "qwen": ("qwen3.7-plus", None),
-    "glm": ("glm-5", None),
-    "xai": ("grok-4.3", None),
-}
+SUPPORTED_PROVIDERS = ("openai", "google", "anthropic", "deepseek", "qwen", "glm", "xai", "minimax")
 
 
 # Minimal but realistic state for the three agents.
@@ -104,14 +95,13 @@ def _print_section(title: str, content: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("provider", choices=list(PROVIDER_DEFAULTS.keys()))
+    parser.add_argument("provider", choices=SUPPORTED_PROVIDERS)
     parser.add_argument("--deep-model", default=None, help="Override deep_think_llm")
     parser.add_argument("--quick-model", default=None, help="Override quick_think_llm")
     args = parser.parse_args()
 
-    default_model, _ = PROVIDER_DEFAULTS[args.provider]
-    deep_model = args.deep_model or default_model
-    quick_model = args.quick_model or default_model
+    deep_model = args.deep_model or get_model_options(args.provider, "deep")[0][1]
+    quick_model = args.quick_model or get_model_options(args.provider, "quick")[0][1]
 
     print(f"Provider: {args.provider}")
     print(f"Deep model:  {deep_model}")
