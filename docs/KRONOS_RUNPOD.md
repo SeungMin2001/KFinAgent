@@ -27,7 +27,7 @@ Kubernetes until there is measured multi-GPU or multi-service demand.
 4. Expose port `8000` through RunPod's HTTPS proxy. Restrict inbound access to
    this application's client where possible. Do not expose an unauthenticated
    GPU endpoint.
-5. On the TradingAgents side, add these values to `.env`:
+5. On the KStockAgents side, add these values to `.env`:
 
    ```env
    KRONOS_API_URL=https://YOUR-RUNPOD-PROXY/v1/forecast

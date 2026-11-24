@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="594" viewBox="0 0 1180 594" role="img" aria-labelledby="title description">
+  <title id="title">KStockAgents enhanced research architecture</title>
+  <desc id="description">Verified KIS candles, KIS investor flows, OpenDART disclosures and financials, and ECOS and FRED observations enter an evidence snapshot. An optional Kronos service receives the verified KIS candles only. Market, flow, disclosure, fundamentals, macro and optional forecast analysts feed a bull and bear debate. A research manager synthesizes their arguments, a trader drafts a proposal, three risk analysts challenge it, and a portfolio manager writes the final rating and research report.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="m1 1 6 3-6 3" fill="none" stroke="#54647b" stroke-width="1.5" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #182840; }
+      .title { font-size: 29px; font-weight: 700; }
+      .subtitle { font-size: 15px; fill: #4c5d73; }
+      .section { font-size: 16px; font-weight: 700; }
+      .label { font-size: 16px; font-weight: 700; }
+      .detail { font-size: 13px; fill: #41536b; }
+      .flow { fill: none; stroke: #54647b; stroke-width: 1.8; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1178" height="592" rx="20" fill="#fff" stroke="#d3dbe7" stroke-width="2"/>
+  <text class="title" x="25" y="43">KStockAgents architecture</text>
+  <text class="subtitle" x="26" y="67">Enhanced research for Korean stocks · TradingAgents role structure</text>
+
+  <g aria-label="Korean sources and analysts">
+    <rect x="24" y="93" width="286" height="390" rx="16" fill="#fff9eb" stroke="#e9b755" stroke-width="2"/>
+    <path d="M40 94h254a15 15 0 0 1 15 15v28H25v-28a15 15 0 0 1 15-15Z" fill="#fadc9c"/>
+    <text class="section" x="41" y="121">Korean sources → analysts</text>
+
+    <rect x="40" y="151" width="254" height="52" rx="10" fill="#fff" stroke="#ead3a9"/>
+    <text class="label" x="52" y="173">KIS daily bars → Market</text>
+    <text class="detail" x="52" y="191">Verified candles · technical indicators</text>
+
+    <rect x="40" y="213" width="254" height="52" rx="10" fill="#fff" stroke="#ead3a9"/>
+    <text class="label" x="52" y="235">KIS investor flow → Sentiment</text>
+    <text class="detail" x="52" y="253">Foreign · institutions · trusts · funds</text>
+
+    <rect x="40" y="275" width="254" height="64" rx="10" fill="#fff" stroke="#ead3a9"/>
+    <text class="label" x="52" y="297" style="font-size:15px">OpenDART → News &amp; Financials</text>
+    <text class="detail" x="52" y="315">Filings · periodic financial evidence</text>
+    <text class="detail" x="52" y="331">News also reads KIS headlines</text>
+
+    <rect x="40" y="349" width="254" height="52" rx="10" fill="#fff" stroke="#ead3a9"/>
+    <text class="label" x="52" y="371">ECOS + FRED → Macro</text>
+    <text class="detail" x="52" y="389">Korean and U.S. economic data</text>
+
+    <rect x="40" y="411" width="254" height="57" rx="10" fill="#fff" stroke="#bc9162" stroke-dasharray="4 3"/>
+    <text class="label" x="52" y="434">Kronos → Forecast analyst</text>
+    <text class="detail" x="52" y="454">Optional · receives KIS daily bars only</text>
+  </g>
+
+  <g aria-label="Evidence collection and research discussion">
+    <path class="flow" d="M310 253H340"/>
+    <rect x="342" y="93" width="215" height="390" rx="16" fill="#fff9eb" stroke="#e9b755" stroke-width="2"/>
+    <path d="M358 94h183a15 15 0 0 1 15 15v28H343v-28a15 15 0 0 1 15-15Z" fill="#fadc9c"/>
+    <text class="section" x="359" y="121">Research team</text>
+
+    <text class="detail" x="359" y="160">Evidence snapshot and analyst</text>
+    <text class="detail" x="359" y="177">reports feed both researchers.</text>
+
+    <rect x="359" y="195" width="181" height="62" rx="10" fill="#def3e3" stroke="#71ae85"/>
+    <text class="label" x="373" y="222">Bull researcher</text>
+    <text class="detail" x="373" y="241">Upside and catalysts</text>
+
+    <path class="flow" d="M390 264V295"/>
+    <path class="flow" d="M505 296V265"/>
+    <text class="detail" x="419" y="285">Debate</text>
+
+    <rect x="359" y="304" width="181" height="62" rx="10" fill="#fce6e8" stroke="#cd8992"/>
+    <text class="label" x="373" y="331">Bear researcher</text>
+    <text class="detail" x="373" y="350">Downside and counterpoints</text>
+
+    <path class="flow" d="M449 371V392"/>
+    <rect x="359" y="397" width="181" height="64" rx="10" fill="#fff" stroke="#ead3a9"/>
+    <text class="label" x="373" y="424">Research manager</text>
+    <text class="detail" x="373" y="444">Synthesizes the arguments</text>
+  </g>
+
+  <g aria-label="Proposal and risk management">
+    <path class="flow" d="M541 431H573Q587 431 587 417V301H607"/>
+    <rect x="609" y="242" width="141" height="118" rx="15" fill="#f1ebff" stroke="#9c82d8" stroke-width="2"/>
+    <text class="section" x="627" y="275">Trader</text>
+    <text class="detail" x="627" y="301">Drafts proposal</text>
+    <text class="detail" x="627" y="323">with reasoning</text>
+    <path class="flow" d="M750 301H777"/>
+
+    <rect x="779" y="183" width="195" height="234" rx="16" fill="#edf3ff" stroke="#7895cc" stroke-width="2"/>
+    <path d="M795 184h163a15 15 0 0 1 15 15v28H780v-28a15 15 0 0 1 15-15Z" fill="#ccddfa"/>
+    <text class="section" x="795" y="212">Risk management</text>
+    <rect x="795" y="242" width="163" height="30" rx="8" fill="#fff" stroke="#bacdec"/>
+    <text class="label" x="808" y="263">Aggressive</text>
+    <rect x="795" y="282" width="163" height="30" rx="8" fill="#fff" stroke="#bacdec"/>
+    <text class="label" x="808" y="303">Conservative</text>
+    <rect x="795" y="322" width="163" height="30" rx="8" fill="#fff" stroke="#bacdec"/>
+    <text class="label" x="808" y="343">Neutral</text>
+    <text class="detail" x="795" y="382">Challenge the proposal</text>
+  </g>
+
+  <g aria-label="Final research outputs">
+    <path class="flow" d="M974 301H1002"/>
+    <rect x="1004" y="242" width="152" height="118" rx="15" fill="#e6efff" stroke="#7895cc" stroke-width="2"/>
+    <text class="section" x="1016" y="274" style="font-size:15px">Portfolio manager</text>
+    <text class="detail" x="1019" y="301">Final rating</text>
+    <text class="detail" x="1019" y="323">Risk-weighted rationale</text>
+    <path class="flow" d="M1080 360V489"/>
+
+    <rect x="780" y="492" width="376" height="73" rx="14" fill="#e5efff" stroke="#7895cc" stroke-width="2"/>
+    <text class="section" x="797" y="520">Research outputs</text>
+    <text class="detail" x="797" y="542">Evidence snapshot · debate · final brief · chart</text>
+  </g>
+</svg>
