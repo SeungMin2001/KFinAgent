@@ -126,7 +126,9 @@ def test_long_disclosure_is_fully_chunked_then_synthesized(domain):
     body = "".join(f"line-{index:04d} detail\n" for index in range(300))
     snapshot = "## OpenDART disclosures (official metadata and original document text)\n" + body
 
-    from tradingagents.agents.analysts.korean_evidence_analysts import create_korean_fundamentals_analyst
+    from tradingagents.agents.analysts.korean_evidence_analysts import (
+        create_korean_fundamentals_analyst,
+    )
     factory = create_disclosure_evidence_analyst if domain == "disclosure" else create_korean_fundamentals_analyst
     factory(llm, max_chunk_chars=1_000)(
         {"trade_date": "2026-09-02", "verified_market_snapshot": snapshot}
