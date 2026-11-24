@@ -1,10 +1,14 @@
+<p align="center">
+  <a href="README.md"><kbd><strong>🇰🇷&nbsp; 한국어</strong></kbd></a>
+  &emsp;
+  <a href="README.en.md"><kbd><strong>🇺🇸&nbsp; English</strong></kbd></a>
+</p>
+
 # KStockAgents
 
 **TradingAgents for Korean Stocks**
 
 Enter a six-digit KRX ticker to collect **foreign and institutional investor flows, OpenDART filings, and Bank of Korea data**. Bull and bear researchers debate the evidence, risk analysts challenge the proposal, and the portfolio manager records a rating and conditions to watch in a Korean-language report.
-
-<a href="README.md"><kbd>한국어</kbd></a> <a href="README.en.md"><kbd>English</kbd></a>
 
 ## Architecture and debate
 

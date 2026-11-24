@@ -1,10 +1,14 @@
+<p align="center">
+  <a href="README.md"><kbd><strong>🇰🇷&nbsp; 한국어</strong></kbd></a>
+  &emsp;
+  <a href="README.en.md"><kbd><strong>🇺🇸&nbsp; English</strong></kbd></a>
+</p>
+
 # KStockAgents
 
 **TradingAgents 기반 한국 주식 리서치 에이전트**
 
 삼성전자 `005930` 같은 6자리 종목코드를 입력하면 **외국인·기관 수급, OpenDART 공시, 한국은행 경제지표**를 모읍니다. 상승·하락 리서처와 리스크 분석가가 같은 근거를 두고 토론하고, 최종 의견과 확인할 조건을 한국어 보고서에 남깁니다.
-
-<a href="README.md"><kbd>한국어</kbd></a> <a href="README.en.md"><kbd>English</kbd></a>
 
 ## 아키텍처와 토론
 
