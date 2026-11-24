@@ -1,8 +1,6 @@
-<p align="center">
-  <a href="README.md"><kbd><strong>🇰🇷&nbsp; 한국어</strong></kbd></a>
-  &emsp;
-  <a href="README.en.md"><kbd><strong>🇺🇸&nbsp; English</strong></kbd></a>
-</p>
+<h3 align="center">
+  <a href="README.md"><ins>한국어</ins></a> | <a href="README.en.md"><ins>English</ins></a>
+</h3>
 
 # KStockAgents
 
