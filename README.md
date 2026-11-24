@@ -1,6 +1,6 @@
-<h3 align="center">
-  <a href="README.md"><ins>한국어</ins></a> | <a href="README.en.md"><ins>English</ins></a>
-</h3>
+<h4 align="center">
+  <a href="README.md"><ins>한국어    </ins></a>  |   <a href="README.en.md"><ins>English</ins></a>
+</h4>
 
 # KStockAgents
 
