@@ -1,109 +1,209 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="594" viewBox="0 0 1180 594" role="img" aria-labelledby="title description">
-  <title id="title">KStockAgents enhanced research architecture</title>
-  <desc id="description">Verified KIS candles, KIS investor flows, OpenDART disclosures and financials, and ECOS and FRED observations enter an evidence snapshot. An optional Kronos service receives the verified KIS candles only. Market, flow, disclosure, fundamentals, macro and optional forecast analysts feed a bull and bear debate. A research manager synthesizes their arguments, a trader drafts a proposal, three risk analysts challenge it, and a portfolio manager writes the final rating and research report.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1450" height="665" viewBox="0 0 1450 665" role="img" aria-labelledby="title desc">
+  <title id="title">KStockAgents Architecture</title>
+  <desc id="desc">KIS candles and investor flows, OpenDART filings, ECOS and FRED macro observations and optional Kronos forecasts go to the analyst team. Only KIS candles go to Kronos. Bull and Bear researchers debate and a research manager synthesizes both cases. A trader proposes a plan, three risk analysts review it, and a portfolio manager issues a final rating. The run saves a final brief, full report, evidence log, and chart.</desc>
+
   <defs>
-    <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
-      <path d="m1 1 6 3-6 3" fill="none" stroke="#54647b" stroke-width="1.5" stroke-linejoin="round"/>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="m3 2 7 4-7 4" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
     </marker>
-    <style>
-      text { font-family: Arial, Helvetica, sans-serif; fill: #182840; }
-      .title { font-size: 29px; font-weight: 700; }
-      .subtitle { font-size: 15px; fill: #4c5d73; }
-      .section { font-size: 16px; font-weight: 700; }
-      .label { font-size: 16px; font-weight: 700; }
-      .detail { font-size: 13px; fill: #41536b; }
-      .flow { fill: none; stroke: #54647b; stroke-width: 1.8; marker-end: url(#arrow); }
-    </style>
+    <symbol id="candles" viewBox="0 0 32 32">
+      <path d="M7 4v24m9-25v26m9-24v22"/>
+      <path d="M4 11h6v9H4zM13 7h6v9h-6zM22 13h6v8h-6z" fill="white"/>
+    </symbol>
+    <symbol id="flows" viewBox="0 0 32 32">
+      <circle cx="7" cy="9" r="3"/><path d="M2 17c0-5 10-5 10 0m12-8h6l-3-3m3 3-3 3m-4 12h-7l3-3m-3 3 3 3"/>
+      <path d="M21 17v-3l-2-2m2 5h8v13H21zM24 21h2m-2 4h2M6 24h5"/>
+    </symbol>
+    <symbol id="filing" viewBox="0 0 32 32">
+      <path d="M7 3h12l6 6v20H7zM19 3v7h6M11 15h10m-10 5h10m-10 5h7"/>
+    </symbol>
+    <symbol id="bank" viewBox="0 0 32 32">
+      <path d="m3 11 13-7 13 7v3H3zM7 15v10m6-10v10m6-10v10m6-10v10M3 26h26v3H3z"/>
+    </symbol>
+    <symbol id="forecast" viewBox="0 0 32 32">
+      <path d="M3 26h26M4 23l6-7 5 3m2-15v22" />
+      <path d="m19 17 4-4 5 2m-9 2 4 2 5-1m-9-1 4-8 5-2" stroke-dasharray="2 3"/>
+      <circle cx="15" cy="19" r="1.5" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="snapshot" viewBox="0 0 32 32">
+      <ellipse cx="16" cy="7" rx="10" ry="4"/><path d="M6 7v16c0 5 20 5 20 0V7M6 15c0 5 20 5 20 0m-17 5h3"/>
+    </symbol>
+    <symbol id="bull" viewBox="0 0 32 32">
+      <path d="M9 12C5 11 4 8 4 5c3 2 4 3 8 3h8c4 0 5-1 8-3 0 3-1 6-5 7m0 0v9a7 7 0 0 1-14 0v-9"/>
+      <path d="M13 16h.1m5.9 0h.1m-6.1 7h6"/>
+    </symbol>
+    <symbol id="bear" viewBox="0 0 32 32">
+      <path d="M9 11a4 4 0 1 1 3-5m11 5a4 4 0 1 0-3-5"/>
+      <ellipse cx="16" cy="16" rx="11" ry="10"/><path d="M12 15h.1m7.9 0h.1m-6.1 6 2-1 2 1"/>
+    </symbol>
+    <symbol id="research" viewBox="0 0 32 32">
+      <path d="M6 4h17v15m-17 8V4m0 23h10M10 9h9m-9 5h6m-6 5h3"/>
+      <circle cx="22" cy="21" r="5"/><path d="m25.5 24.5 4 4"/>
+    </symbol>
+    <symbol id="proposal" viewBox="0 0 32 32">
+      <path d="M24 17v10H6V5h18v4M10 11h9m-9 6h6m-6 6h3m4-1 3-1 9-9-2-2-9 9z"/>
+    </symbol>
+    <symbol id="shield" viewBox="0 0 32 32">
+      <path d="M16 3c5 4 8 4 11 5v7c0 6-5 10-11 14C10 25 5 21 5 15V8c3-1 6-1 11-5z"/>
+    </symbol>
+    <symbol id="aggressive" viewBox="0 0 32 32">
+      <use href="#shield"/><path d="m17 8-6 9h5l-1 6 7-10h-5z"/>
+    </symbol>
+    <symbol id="conservative" viewBox="0 0 32 32">
+      <use href="#shield"/><path d="M11 16h10m-5-5v10"/>
+    </symbol>
+    <symbol id="neutral" viewBox="0 0 32 32">
+      <use href="#shield"/><path d="M11 14h10m-10 5h10"/>
+    </symbol>
+    <symbol id="manager" viewBox="0 0 32 32">
+      <path d="M10 6h12v4H10zM10 8H5v20h22V8h-5m-11 9 4 4 7-8"/>
+    </symbol>
+    <symbol id="debate" viewBox="0 0 32 32">
+      <path d="M3 5h17v12h-9l-5 4v-4H3zm20 5h6v13h-4v4l-5-4h-7v-3m-6-9h9"/>
+    </symbol>
+    <symbol id="brief" viewBox="0 0 32 32">
+      <use href="#filing"/><path d="m16 22 3 3 6-7" stroke-width="3" stroke="white"/><path d="m16 22 3 3 6-7"/>
+    </symbol>
+    <symbol id="chart" viewBox="0 0 32 32">
+      <path d="M5 5v22h23M8 20l6-7 5 3 7-8m-5 0h5v5"/>
+    </symbol>
+
+
+    <symbol id="person" viewBox="0 0 64 64">
+      <path d="M18 31v-8c0-9 6-15 14-15s14 6 14 15v8c0 8-6 14-14 14s-14-6-14-14z"/>
+      <path d="M18 25c7-1 12-5 13-10 4 5 9 8 15 9M27 44v5l5 4 5-4v-5M25 48l-10 4c-5 2-8 6-8 9h50c0-3-3-7-8-9l-10-4M19 53l5 8m21-8-5 8"/>
+    </symbol>
+    <symbol id="trader" viewBox="0 0 64 64">
+      <use href="#person" x="0" y="0" width="52" height="53"/>
+      <rect x="36" y="32" width="25" height="18" rx="3" fill="white"/>
+      <path d="M49 50v7m-6 0h12M40 44l5-5 5 3 6-5"/>
+    </symbol>
+    <symbol id="portfolio" viewBox="0 0 64 64">
+      <use href="#person" x="2" y="0" width="52" height="52"/>
+      <circle cx="49" cy="45" r="11" fill="white"/>
+      <path d="m44 45 4 4 6-7"/>
+    </symbol>
+    <symbol id="flow-professional" viewBox="0 0 32 32">
+      <circle cx="8" cy="8" r="3"/><path d="M2 18v-2c0-5 12-5 12 0v2M21 6h9m-3-3 3 3-3 3M13 26H4m3-3-3 3 3 3M19 15l5-3 6 3v3H19zm2 4v7m6-7v7m-9 1h13"/>
+    </symbol>
+    <symbol id="candles-professional" viewBox="0 0 32 32">
+      <path d="M6 8v15m9-18v13m9-15v14M2 28h28"/>
+      <path d="M3 12h6v6H3zm9-3h6v5h-6zm9-2h6v5h-6z" fill="white"/>
+      <path d="M4 25l9-3 7 1 8-4" opacity=".75"/>
+    </symbol>
+    <symbol id="model" viewBox="0 0 40 40">
+      <rect x="3" y="9" width="24" height="24" rx="4"/>
+      <path d="M9 4v5m6-5v5m6-5v5M9 33v4m6-4v4m6-4v4M7 25l5-6 4 3 6-8m6 3 9-8m-9 10 9 0m-9 2 9 7" />
+    </symbol>
   </defs>
-
-  <rect x="1" y="1" width="1178" height="592" rx="20" fill="#fff" stroke="#d3dbe7" stroke-width="2"/>
-  <text class="title" x="25" y="43">KStockAgents architecture</text>
-  <text class="subtitle" x="26" y="67">Enhanced research for Korean stocks · TradingAgents role structure</text>
-
-  <g aria-label="Korean sources and analysts">
-    <rect x="24" y="93" width="286" height="390" rx="16" fill="#fff9eb" stroke="#e9b755" stroke-width="2"/>
-    <path d="M40 94h254a15 15 0 0 1 15 15v28H25v-28a15 15 0 0 1 15-15Z" fill="#fadc9c"/>
-    <text class="section" x="41" y="121">Korean sources → analysts</text>
-
-    <rect x="40" y="151" width="254" height="52" rx="10" fill="#fff" stroke="#ead3a9"/>
-    <text class="label" x="52" y="173">KIS daily bars → Market</text>
-    <text class="detail" x="52" y="191">Verified candles · technical indicators</text>
-
-    <rect x="40" y="213" width="254" height="52" rx="10" fill="#fff" stroke="#ead3a9"/>
-    <text class="label" x="52" y="235">KIS investor flow → Sentiment</text>
-    <text class="detail" x="52" y="253">Foreign · institutions · trusts · funds</text>
-
-    <rect x="40" y="275" width="254" height="64" rx="10" fill="#fff" stroke="#ead3a9"/>
-    <text class="label" x="52" y="297" style="font-size:15px">OpenDART → News &amp; Financials</text>
-    <text class="detail" x="52" y="315">Filings · periodic financial evidence</text>
-    <text class="detail" x="52" y="331">News also reads KIS headlines</text>
-
-    <rect x="40" y="349" width="254" height="52" rx="10" fill="#fff" stroke="#ead3a9"/>
-    <text class="label" x="52" y="371">ECOS + FRED → Macro</text>
-    <text class="detail" x="52" y="389">Korean and U.S. economic data</text>
-
-    <rect x="40" y="411" width="254" height="57" rx="10" fill="#fff" stroke="#bc9162" stroke-dasharray="4 3"/>
-    <text class="label" x="52" y="434">Kronos → Forecast analyst</text>
-    <text class="detail" x="52" y="454">Optional · receives KIS daily bars only</text>
-  </g>
-
-  <g aria-label="Evidence collection and research discussion">
-    <path class="flow" d="M310 253H340"/>
-    <rect x="342" y="93" width="215" height="390" rx="16" fill="#fff9eb" stroke="#e9b755" stroke-width="2"/>
-    <path d="M358 94h183a15 15 0 0 1 15 15v28H343v-28a15 15 0 0 1 15-15Z" fill="#fadc9c"/>
-    <text class="section" x="359" y="121">Research team</text>
-
-    <text class="detail" x="359" y="160">Evidence snapshot and analyst</text>
-    <text class="detail" x="359" y="177">reports feed both researchers.</text>
-
-    <rect x="359" y="195" width="181" height="62" rx="10" fill="#def3e3" stroke="#71ae85"/>
-    <text class="label" x="373" y="222">Bull researcher</text>
-    <text class="detail" x="373" y="241">Upside and catalysts</text>
-
-    <path class="flow" d="M390 264V295"/>
-    <path class="flow" d="M505 296V265"/>
-    <text class="detail" x="419" y="285">Debate</text>
-
-    <rect x="359" y="304" width="181" height="62" rx="10" fill="#fce6e8" stroke="#cd8992"/>
-    <text class="label" x="373" y="331">Bear researcher</text>
-    <text class="detail" x="373" y="350">Downside and counterpoints</text>
-
-    <path class="flow" d="M449 371V392"/>
-    <rect x="359" y="397" width="181" height="64" rx="10" fill="#fff" stroke="#ead3a9"/>
-    <text class="label" x="373" y="424">Research manager</text>
-    <text class="detail" x="373" y="444">Synthesizes the arguments</text>
-  </g>
-
-  <g aria-label="Proposal and risk management">
-    <path class="flow" d="M541 431H573Q587 431 587 417V301H607"/>
-    <rect x="609" y="242" width="141" height="118" rx="15" fill="#f1ebff" stroke="#9c82d8" stroke-width="2"/>
-    <text class="section" x="627" y="275">Trader</text>
-    <text class="detail" x="627" y="301">Drafts proposal</text>
-    <text class="detail" x="627" y="323">with reasoning</text>
-    <path class="flow" d="M750 301H777"/>
-
-    <rect x="779" y="183" width="195" height="234" rx="16" fill="#edf3ff" stroke="#7895cc" stroke-width="2"/>
-    <path d="M795 184h163a15 15 0 0 1 15 15v28H780v-28a15 15 0 0 1 15-15Z" fill="#ccddfa"/>
-    <text class="section" x="795" y="212">Risk management</text>
-    <rect x="795" y="242" width="163" height="30" rx="8" fill="#fff" stroke="#bacdec"/>
-    <text class="label" x="808" y="263">Aggressive</text>
-    <rect x="795" y="282" width="163" height="30" rx="8" fill="#fff" stroke="#bacdec"/>
-    <text class="label" x="808" y="303">Conservative</text>
-    <rect x="795" y="322" width="163" height="30" rx="8" fill="#fff" stroke="#bacdec"/>
-    <text class="label" x="808" y="343">Neutral</text>
-    <text class="detail" x="795" y="382">Challenge the proposal</text>
-  </g>
-
-  <g aria-label="Final research outputs">
-    <path class="flow" d="M974 301H1002"/>
-    <rect x="1004" y="242" width="152" height="118" rx="15" fill="#e6efff" stroke="#7895cc" stroke-width="2"/>
-    <text class="section" x="1016" y="274" style="font-size:15px">Portfolio manager</text>
-    <text class="detail" x="1019" y="301">Final rating</text>
-    <text class="detail" x="1019" y="323">Risk-weighted rationale</text>
-    <path class="flow" d="M1080 360V489"/>
-
-    <rect x="780" y="492" width="376" height="73" rx="14" fill="#e5efff" stroke="#7895cc" stroke-width="2"/>
-    <text class="section" x="797" y="520">Research outputs</text>
-    <text class="detail" x="797" y="542">Evidence snapshot · debate · final brief · chart</text>
+  <g font-family="Arial, Helvetica, sans-serif">
+  <rect x="1" y="1" width="1448" height="663" rx="18" fill="#fff" stroke="#dae1ec" stroke-width="1.4"/>
+  <text x="29" y="46" font-size="30" font-weight="750" fill="#14253f" text-anchor="start">KStockAgents Architecture</text>
+  <text x="30" y="80" font-size="19" font-weight="700" fill="#70460d" text-anchor="start">Korean Market Sources</text>
+  <rect x="30" y="95" width="348" height="76" rx="17" fill="#fffdf8" stroke="#efcf92" stroke-width="1.6"/>
+  <path d="M47 96h58v74H47a16 16 0 0 1-16-16v-42a16 16 0 0 1 16-16Z" fill="#ffedc9"/>
+  <use href="#candles-professional" x="48" y="113" width="40" height="40" style="color:#be760a" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="119" y="126" font-size="20" font-weight="700" fill="#14253f" text-anchor="start">KIS Market Data</text>
+  <text x="119" y="150" font-size="15" font-weight="450" fill="#50637b" text-anchor="start">Daily OHLCVA · technical indicators</text>
+  <rect x="30" y="185" width="348" height="76" rx="17" fill="#fffdf8" stroke="#efcf92" stroke-width="1.6"/>
+  <path d="M47 186h58v74H47a16 16 0 0 1-16-16v-42a16 16 0 0 1 16-16Z" fill="#ffedc9"/>
+  <use href="#flow-professional" x="48" y="203" width="40" height="40" style="color:#be760a" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="119" y="216" font-size="20" font-weight="700" fill="#14253f" text-anchor="start">KIS Investor Flows</text>
+  <text x="119" y="240" font-size="15" font-weight="450" fill="#50637b" text-anchor="start">Foreign investors · institutions</text>
+  <rect x="30" y="275" width="348" height="76" rx="17" fill="#fffdf8" stroke="#efcf92" stroke-width="1.6"/>
+  <path d="M47 276h58v74H47a16 16 0 0 1-16-16v-42a16 16 0 0 1 16-16Z" fill="#ffedc9"/>
+  <use href="#filing" x="48" y="293" width="40" height="40" style="color:#be760a" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="119" y="306" font-size="20" font-weight="700" fill="#14253f" text-anchor="start">OpenDART</text>
+  <text x="119" y="330" font-size="15" font-weight="450" fill="#50637b" text-anchor="start">Filings · periodic financials</text>
+  <rect x="30" y="365" width="348" height="76" rx="17" fill="#fffdf8" stroke="#efcf92" stroke-width="1.6"/>
+  <path d="M47 366h58v74H47a16 16 0 0 1-16-16v-42a16 16 0 0 1 16-16Z" fill="#ffedc9"/>
+  <use href="#bank" x="48" y="383" width="40" height="40" style="color:#be760a" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="119" y="396" font-size="20" font-weight="700" fill="#14253f" text-anchor="start">ECOS + FRED</text>
+  <text x="119" y="420" font-size="15" font-weight="450" fill="#50637b" text-anchor="start">Korean and U.S. macro data</text>
+  <rect x="30" y="455" width="348" height="76" rx="17" fill="#f5fcfa" stroke="#9dd2c8" stroke-width="1.6"/>
+  <path d="M47 456h58v74H47a16 16 0 0 1-16-16v-42a16 16 0 0 1 16-16Z" fill="#d8f3eb"/>
+  <use href="#model" x="48" y="473" width="40" height="40" style="color:#177768" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="119" y="486" font-size="20" font-weight="700" fill="#14253f" text-anchor="start">Kronos Forecast</text>
+  <text x="119" y="510" font-size="15" font-weight="450" fill="#50637b" text-anchor="start">KIS bars only · optional</text>
+  <path d="M29 133H17V493H29" fill="none" stroke="#278773" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="5 5"/>
+  <path d="M378 133H399" fill="none" stroke="#ad8857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M378 223H399" fill="none" stroke="#ad8857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M378 313H399" fill="none" stroke="#ad8857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M378 403H399" fill="none" stroke="#ad8857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M378 493H399" fill="none" stroke="#ad8857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M399 493V128H429" fill="none" stroke="#8b6f46" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <rect x="431" y="94" width="284" height="508" rx="20" fill="#fff8e9" stroke="#edbe64" stroke-width="2"/>
+  <rect x="446" y="109" width="254" height="69" rx="11" fill="#fffdf8" stroke="#efd6a6" stroke-width="1.4"/>
+  <use href="#snapshot" x="456" y="130" width="31" height="31" style="color:#9a680f" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="497" y="136" font-size="20" font-weight="730" fill="#14253f" text-anchor="start">Analyst Team</text>
+  <text x="497" y="156" font-size="14" font-weight="480" fill="#50637b" text-anchor="start">Source-tagged evidence</text>
+  <path d="M570 178V201" fill="none" stroke="#987743" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <rect x="448" y="204" width="223" height="76" rx="14" fill="#e6f6e7" stroke="#9dc6a1" stroke-width="1.6"/>
+  <use href="#bull" x="460" y="219" width="45" height="45" style="color:#268341" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="510" y="239" font-size="19" font-weight="730" fill="#215a34" text-anchor="start">Bull Researcher</text>
+  <text x="515" y="260" font-size="14" font-weight="480" fill="#426a4e" text-anchor="start">Upside case</text>
+  <path d="M514 284V327" fill="none" stroke="#2e8b53" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <path d="M609 327V284" fill="none" stroke="#ac5260" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <text x="561" y="311" font-size="14" font-weight="630" fill="#805f37" text-anchor="middle">Debate</text>
+  <rect x="448" y="332" width="223" height="76" rx="14" fill="#ffe9eb" stroke="#e4a7ad" stroke-width="1.6"/>
+  <use href="#bear" x="460" y="347" width="45" height="45" style="color:#b44857" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="510" y="367" font-size="19" font-weight="730" fill="#78313e" text-anchor="start">Bear Researcher</text>
+  <text x="515" y="388" font-size="14" font-weight="480" fill="#865763" text-anchor="start">Downside case</text>
+  <path d="M671 242H687V430H567V443" fill="none" stroke="#61718a" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <path d="M671 370H687" fill="none" stroke="#a15361" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="449" y="446" width="247" height="66" rx="12" fill="#fffdf8" stroke="#efd3a0" stroke-width="1.4"/>
+  <use href="#research" x="460" y="463" width="33" height="33" style="color:#9a680f" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="503" y="473" font-size="18" font-weight="730" fill="#14253f" text-anchor="start">Research Manager</text>
+  <text x="503" y="494" font-size="14" font-weight="450" fill="#50637b" text-anchor="start">Synthesizes both cases</text>
+  <path d="M432 551h282v31a19 19 0 0 1-19 19H451a19 19 0 0 1-19-19z" fill="#edb64f"/>
+  <text x="573" y="584" font-size="23" font-weight="760" fill="#59370e" text-anchor="middle">Research Team</text>
+  <path d="M696 479H731V274H749" fill="none" stroke="#7444c7" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <rect x="751" y="187" width="148" height="174" rx="18" fill="#f2ebff" stroke="#a484e0" stroke-width="2"/>
+  <use href="#trader" x="781" y="208" width="88" height="88" style="color:#7951ca" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="825" y="323" font-size="24" font-weight="750" fill="#473083" text-anchor="middle">Trader</text>
+  <text x="825" y="344" font-size="15" font-weight="520" fill="#6b5594" text-anchor="middle">Proposal</text>
+  <path d="M899 274H924" fill="none" stroke="#7444c7" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <rect x="926" y="114" width="238" height="269" rx="19" fill="#edf4ff" stroke="#8eabe0" stroke-width="2"/>
+  <path d="M945 115h200a18 18 0 0 1 18 18v28H927v-28a18 18 0 0 1 18-18z" fill="#5579c2"/>
+  <text x="1045" y="145" font-size="20" font-weight="730" fill="#fff" text-anchor="middle">Risk Management</text>
+  <rect x="943" y="177" width="200" height="49" rx="11" fill="#fff" stroke="#ccdaf0" stroke-width="1.4"/>
+  <rect x="952" y="183" width="37" height="37" rx="8" fill="#ffecd2" stroke="none" stroke-width="1.4"/>
+  <use href="#aggressive" x="958" y="189" width="25" height="25" style="color:#a55817" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1000" y="207" font-size="18" font-weight="670" fill="#14253f" text-anchor="start">Aggressive</text>
+  <rect x="943" y="239" width="200" height="49" rx="11" fill="#fff" stroke="#ccdaf0" stroke-width="1.4"/>
+  <rect x="952" y="245" width="37" height="37" rx="8" fill="#dceaff" stroke="none" stroke-width="1.4"/>
+  <use href="#conservative" x="958" y="251" width="25" height="25" style="color:#365fa6" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1000" y="269" font-size="18" font-weight="670" fill="#14253f" text-anchor="start">Conservative</text>
+  <rect x="943" y="301" width="200" height="49" rx="11" fill="#fff" stroke="#ccdaf0" stroke-width="1.4"/>
+  <rect x="952" y="307" width="37" height="37" rx="8" fill="#e7edf4" stroke="none" stroke-width="1.4"/>
+  <use href="#neutral" x="958" y="313" width="25" height="25" style="color:#54677c" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1000" y="331" font-size="18" font-weight="670" fill="#14253f" text-anchor="start">Neutral</text>
+  <path d="M1164 274H1186" fill="none" stroke="#3d65bc" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <rect x="1189" y="187" width="228" height="174" rx="19" fill="#e9f0ff" stroke="#85a4e0" stroke-width="2"/>
+  <use href="#portfolio" x="1257" y="206" width="89" height="89" style="color:#416fc8" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1303" y="321" font-size="22" font-weight="730" fill="#244a90" text-anchor="middle">Portfolio Manager</text>
+  <text x="1303" y="343" font-size="15" font-weight="520" fill="#5071a7" text-anchor="middle">Final rating</text>
+  <path d="M1303 361V437" fill="none" stroke="#3d65bc" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <rect x="751" y="439" width="666" height="163" rx="19" fill="#f5f8ff" stroke="#a7bce6" stroke-width="1.8"/>
+  <path d="M770 440h628a18 18 0 0 1 18 18v23H752v-23a18 18 0 0 1 18-18z" fill="#dce8ff"/>
+  <text x="1084" y="469" font-size="22" font-weight="750" fill="#294f92" text-anchor="middle">Research Outputs</text>
+  <rect x="765" y="493" width="150" height="94" rx="11" fill="#fff" stroke="#ccd9ef" stroke-width="1.4"/>
+  <rect x="820" y="502" width="40" height="40" rx="8" fill="#e6efff" stroke="none" stroke-width="1.4"/>
+  <use href="#brief" x="827" y="509" width="26" height="26" style="color:#3d65bc" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="840" y="566" font-size="15.5" font-weight="690" fill="#294775" text-anchor="middle">Final Brief</text>
+  <rect x="926" y="493" width="150" height="94" rx="11" fill="#fff" stroke="#ccd9ef" stroke-width="1.4"/>
+  <rect x="981" y="502" width="40" height="40" rx="8" fill="#e6efff" stroke="none" stroke-width="1.4"/>
+  <use href="#debate" x="988" y="509" width="26" height="26" style="color:#3d65bc" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1001" y="566" font-size="15.5" font-weight="690" fill="#294775" text-anchor="middle">Full Report</text>
+  <rect x="1087" y="493" width="150" height="94" rx="11" fill="#fff" stroke="#ccd9ef" stroke-width="1.4"/>
+  <rect x="1142" y="502" width="40" height="40" rx="8" fill="#e6efff" stroke="none" stroke-width="1.4"/>
+  <use href="#snapshot" x="1149" y="509" width="26" height="26" style="color:#3d65bc" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1162" y="566" font-size="15.5" font-weight="690" fill="#294775" text-anchor="middle">Evidence Log</text>
+  <rect x="1248" y="493" width="150" height="94" rx="11" fill="#fff" stroke="#ccd9ef" stroke-width="1.4"/>
+  <rect x="1303" y="502" width="40" height="40" rx="8" fill="#e6efff" stroke="none" stroke-width="1.4"/>
+  <use href="#chart" x="1310" y="509" width="26" height="26" style="color:#3d65bc" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1323" y="566" font-size="15.5" font-weight="690" fill="#294775" text-anchor="middle">Price &amp; Forecast</text>
+  <path d="M31 585H61" fill="none" stroke="#278773" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="5 5"/>
+  <text x="70" y="590" font-size="14.5" font-weight="540" fill="#2b695c" text-anchor="start">KIS candles to Kronos</text>
   </g>
 </svg>
