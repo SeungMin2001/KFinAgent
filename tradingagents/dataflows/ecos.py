@@ -43,13 +43,20 @@ def _series_rows(key: str, target: EcosSeries, as_of: str, lookback_days: int) -
         f"{_BASE_URL}/StatisticSearch/{key}/json/kr/1/1000/"
         f"{target.stat_code}/{target.cycle}/{start}/{end}/{target.item_code}"
     )
-    response = requests.get(url, timeout=30)
-    response.raise_for_status()
-    payload = response.json()
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        payload = response.json()
+    except requests.RequestException as exc:
+        # ECOS embeds the API key in the request URL.
+        status = exc.response.status_code if exc.response is not None else None
+        detail = f"HTTP {status}" if status is not None else type(exc).__name__
+        raise RuntimeError(f"ECOS transport failed for {target.label} ({detail})") from None
     block = payload.get("StatisticSearch", {})
     rows = block.get("row")
     if not rows:
-        raise RuntimeError(f"ECOS returned no observations for {target.label}: {block or payload}")
+        detail = str(block or payload).replace(key, "[redacted]")
+        raise RuntimeError(f"ECOS returned no observations for {target.label}: {detail}")
     total = int(block.get("list_total_count", len(rows)))
     if total > len(rows):
         raise RuntimeError(

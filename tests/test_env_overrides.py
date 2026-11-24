@@ -21,11 +21,22 @@ def _reload_with_env(monkeypatch, **overrides):
 def test_no_env_uses_built_in_defaults(monkeypatch):
     dc = _reload_with_env(monkeypatch)
     assert dc.DEFAULT_CONFIG["llm_provider"] == "openai"
-    assert dc.DEFAULT_CONFIG["deep_think_llm"] == "gpt-5.6"
-    assert dc.DEFAULT_CONFIG["quick_think_llm"] == "gpt-5.6-luna"
+    assert dc.DEFAULT_CONFIG["deep_think_llm"] == "gpt-6.2-sol"
+    assert dc.DEFAULT_CONFIG["quick_think_llm"] == "gpt-6-luna"
     assert dc.DEFAULT_CONFIG["backend_url"] is None
     assert dc.DEFAULT_CONFIG["max_debate_rounds"] == 1
     assert dc.DEFAULT_CONFIG["checkpoint_enabled"] is False
+
+
+def test_provider_defaults_keep_explicit_model_override(monkeypatch):
+    dc = _reload_with_env(
+        monkeypatch,
+        TRADINGAGENTS_LLM_PROVIDER=" Anthropic ",
+        TRADINGAGENTS_QUICK_THINK_LLM="claude-sonnet-5-5",
+    )
+    assert dc.DEFAULT_CONFIG["llm_provider"] == "anthropic"
+    assert dc.DEFAULT_CONFIG["deep_think_llm"] == "claude-opus-5-5"
+    assert dc.DEFAULT_CONFIG["quick_think_llm"] == "claude-sonnet-5-5"
 
 
 def test_string_overrides(monkeypatch):

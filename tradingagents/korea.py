@@ -54,13 +54,15 @@ def create_korean_stock_graph(
 ) -> TradingAgentsGraph:
     """Create a KIS-only Korean-market research graph.
 
-    The standard Korean path enables only the Market Analyst. Setting
-    ``enable_korean_evidence_agents`` in ``config_overrides`` inserts the
-    source-bounded Disclosure, Macro, and Flow analysts used by enhanced mode.
+    The basic path uses the Market Analyst. Enhanced mode adds the Korean
+    source-specific roles when the upgraded role layout is enabled.
     """
+    config = korean_stock_config(config_overrides)
+    enhanced_roles = config["enable_korean_evidence_agents"] and config["korean_role_upgrade"]
+    config["korean_role_upgrade"] = enhanced_roles
     return TradingAgentsGraph(
-        selected_analysts=("market", "social", "news", "fundamentals"),
-        config=korean_stock_config(config_overrides),
+        selected_analysts=("market", "social", "news", "fundamentals") if enhanced_roles else ("market",),
+        config=config,
         debug=debug,
         progress_callback=progress_callback,
     )

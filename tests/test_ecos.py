@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import requests
 
 from tradingagents.dataflows import ecos
 
@@ -42,3 +43,17 @@ def test_ecos_uses_statistic_search_with_as_of_bound(monkeypatch):
     assert "observation period 20260902" in report
     assert "9.9" not in report
     assert "historical data vintages" in report
+
+
+def test_ecos_transport_error_does_not_print_credential(monkeypatch):
+    key = "ecos-example-private-key"
+
+    def fail(url, **kwargs):
+        raise requests.ConnectionError(f"failed to connect to {url}")
+
+    monkeypatch.setenv("ECOS_API_KEY", key)
+    monkeypatch.setattr(ecos.requests, "get", fail)
+    with pytest.raises(RuntimeError, match="ECOS transport failed") as error:
+        ecos.korea_macro_context("2026-09-02")
+    assert key not in str(error.value)
+    assert error.value.__suppress_context__

@@ -1,5 +1,7 @@
 import os
 
+from .llm_clients.model_catalog import MODEL_OPTIONS
+
 _TRADINGAGENTS_HOME = os.path.join(os.path.expanduser("~"), ".tradingagents")
 
 # Single source of truth for env-var → config-key overrides. To expose
@@ -81,6 +83,13 @@ def _apply_env_overrides(config: dict) -> dict:
             config[key] = _coerce(raw, config.get(key))
         except ValueError as exc:
             raise ValueError(f"Invalid value for {env_var}: {exc}") from exc
+    provider = config["llm_provider"].strip().lower()
+    config["llm_provider"] = provider
+    for mode in ("quick", "deep"):
+        model_env = f"TRADINGAGENTS_{mode.upper()}_THINK_LLM"
+        options = MODEL_OPTIONS.get(provider, {}).get(mode, ())
+        if not os.getenv(model_env, "").strip() and options and options[0][1] != "custom":
+            config[f"{mode}_think_llm"] = options[0][1]
     return config
 
 
@@ -95,8 +104,8 @@ DEFAULT_CONFIG = _apply_env_overrides({
     "memory_log_max_entries": None,
     # LLM settings
     "llm_provider": "openai",
-    "deep_think_llm": "gpt-5.6",
-    "quick_think_llm": "gpt-5.6-luna",
+    "deep_think_llm": MODEL_OPTIONS["openai"]["deep"][0][1],
+    "quick_think_llm": MODEL_OPTIONS["openai"]["quick"][0][1],
     # When None, each provider's client falls back to its own default endpoint
     # (api.openai.com for OpenAI, generativelanguage.googleapis.com for Gemini, ...).
     # The CLI overrides this per provider when the user picks one. Keeping a

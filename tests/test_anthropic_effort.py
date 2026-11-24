@@ -96,3 +96,18 @@ class TestEffortGate:
         assert captured["kwargs"]["max_tokens"] == 1024
         assert captured["kwargs"]["timeout"] == 30
         assert "effort" not in captured["kwargs"]
+
+
+@pytest.mark.parametrize(
+    "model,expected",
+    [("claude-opus-5-5", "json_schema"), ("claude-haiku-5-5", "json_schema"),
+     ("claude-opus-4-8", "function_calling")],
+)
+def test_structured_method_matches_model(monkeypatch, model, expected):
+    from langchain_anthropic import ChatAnthropic
+
+    from tradingagents.llm_clients.anthropic_client import AnthropicClient
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "fixture-key")
+    monkeypatch.setattr(ChatAnthropic, "with_structured_output", lambda self, schema, *, method: method)
+    assert AnthropicClient(model).get_llm().with_structured_output({"name": "example"}) == expected

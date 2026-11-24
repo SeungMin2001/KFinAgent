@@ -70,7 +70,12 @@ Copy-Item .env.example .env
 
 ### 3. 삼성전자 분석
 
+기본 OpenAI 모델은 심층 분석에 `gpt-6.2-sol`, 일반 분석에 `gpt-6-luna`를 사용합니다. `--check-config`는 로컬 설정만 확인하며 API 접근 권한은 검사하지 않습니다.
+
 ```bash
+# API를 호출하기 전에 필요한 설정 확인
+python scripts/korean_stock_research.py 005930 --account-mode disabled --kronos-mode disabled --check-config
+
 # KIS 시세·기술지표와 LLM으로 첫 실행
 python scripts/korean_stock_research.py 005930 --account-mode disabled --kronos-mode disabled
 
@@ -87,7 +92,7 @@ python scripts/korean_stock_research.py 005930 --enhanced --account-mode disable
 | `FINAL_BRIEF.md` | 최종 의견과 핵심 근거 |
 | `visuals/market_overview.svg` | 관측 가격 차트와 선택적으로 표시되는 Kronos 예측 |
 
-과거 날짜는 `--date YYYY-MM-DD`로 지정하세요. 공개 가이드는 `--account-mode disabled`를 사용하므로 잔고 조회에 필요한 계좌 설정은 생략할 수 있습니다. 데이터 제공처 인증이나 필수 데이터 조회에 실패하면 에이전트 실행 전에 오류가 표시됩니다. 모델 접근 오류가 나면 계정에서 쓸 수 있는 모델을 `--model`로 지정하세요.
+과거 날짜는 `--date YYYY-MM-DD`로 지정하세요. 공개 가이드는 `--account-mode disabled`를 사용하므로 잔고 조회에 필요한 계좌 설정은 생략할 수 있습니다. 데이터 제공처 인증이나 필수 데이터 조회에 실패하면 에이전트 실행 전에 오류가 표시됩니다. OpenAI API 키에는 해당 모델을 사용할 수 있는 API 프로젝트 권한이 필요합니다. 모델 접근 오류가 나면 계정에서 쓸 수 있는 모델을 `--model`로 지정하세요.
 
 ## 한국 시장에 맞춘 부분
 

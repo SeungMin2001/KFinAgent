@@ -70,7 +70,12 @@ Store your credentials in your local `.env`. Basic research needs KIS and an LLM
 
 ### 3. Run Samsung Electronics research
 
+The OpenAI defaults are `gpt-6.2-sol` for deeper analysis and `gpt-6-luna` for quick analysis. `--check-config` checks local settings only. Provider access is tested during a research run.
+
 ```bash
+# Check the local settings before making API calls
+python scripts/korean_stock_research.py 005930 --account-mode disabled --kronos-mode disabled --check-config
+
 # First run with KIS prices, technical indicators and an LLM
 python scripts/korean_stock_research.py 005930 --account-mode disabled --kronos-mode disabled
 
@@ -87,7 +92,7 @@ Reports are written under `artifacts/reports/`.
 | `FINAL_BRIEF.md` | Final opinion and key evidence |
 | `visuals/market_overview.svg` | Observed prices and optional Kronos forecast |
 
-Use `--date YYYY-MM-DD` for dated research. The commands above disable balance lookup, so account configuration can be left blank. If authentication or required evidence collection fails, the CLI reports the problem before running the agents. If your account lacks model access, set `--model` to a model available to you.
+Use `--date YYYY-MM-DD` for dated research. The commands above disable balance lookup, so account configuration can be left blank. If authentication or required evidence collection fails, the CLI reports the problem before running the agents. Your OpenAI API project needs access to the configured models. If a model is unavailable, set `--model` to one that your account can use.
 
 ## What changes for Korean stocks
 

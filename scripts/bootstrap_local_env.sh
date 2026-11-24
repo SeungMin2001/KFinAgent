@@ -24,7 +24,7 @@ mkdir -p "${venv_root}"
 "${python_bin}" -m venv "${venv_dir}"
 "${venv_dir}/bin/python" -m pip install --upgrade pip
 "${venv_dir}/bin/python" -m pip install -r "${project_root}/requirements.lock"
-"${venv_dir}/bin/python" -m pip install --no-deps -e "${project_root}"
+"${venv_dir}/bin/python" -m pip install -e "${project_root}"
 
 printf 'Local environment ready: %s\n' "${venv_dir}"
-printf 'Run research with: %s/bin/python %s/scripts/korean_stock_research.py 005930 --enhanced --verbose\n' "${venv_dir}" "${project_root}"
+printf 'Run research with: %s/bin/python %s/scripts/korean_stock_research.py 005930 --account-mode disabled --kronos-mode disabled\n' "${venv_dir}" "${project_root}"

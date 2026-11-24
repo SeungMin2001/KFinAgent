@@ -134,20 +134,26 @@ def _fred_today() -> str:
 
 def _request(path: str, params: dict) -> dict:
     """GET a FRED endpoint, surfacing FRED's JSON error body on a bad request."""
-    api_params = {**params, "api_key": get_api_key(), "file_type": "json"}
-    response = requests.get(
-        f"{FRED_API_BASE}/{path}", params=api_params, timeout=REQUEST_TIMEOUT
-    )
-    # FRED returns 400 with a JSON {"error_message": ...} for unknown series IDs
-    # or malformed params; turn that into a clear, actionable error.
-    if response.status_code == 400:
-        try:
-            message = response.json().get("error_message", response.text)
-        except ValueError:
-            message = response.text
-        raise ValueError(f"FRED request failed: {message}")
-    response.raise_for_status()
-    return response.json()
+    key = get_api_key()
+    api_params = {**params, "api_key": key, "file_type": "json"}
+    try:
+        response = requests.get(
+            f"{FRED_API_BASE}/{path}", params=api_params, timeout=REQUEST_TIMEOUT
+        )
+        if response.status_code == 400:
+            try:
+                message = response.json().get("error_message", response.text)
+            except ValueError:
+                message = response.text
+            safe_message = str(message).replace(key, "[redacted]")
+            raise ValueError(f"FRED request failed: {safe_message}")
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as exc:
+        # Requests puts query parameters, including the key, in its exceptions.
+        status = exc.response.status_code if exc.response is not None else None
+        detail = f"HTTP {status}" if status is not None else type(exc).__name__
+        raise RuntimeError(f"FRED transport failed for {path} ({detail})") from None
 
 
 def get_macro_data(

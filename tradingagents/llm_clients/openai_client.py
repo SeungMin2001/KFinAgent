@@ -85,20 +85,8 @@ def _input_to_messages(input_: Any) -> list:
     return []
 
 
-class DeepSeekChatOpenAI(NormalizedChatOpenAI):
-    """DeepSeek-specific overrides on top of the OpenAI-compatible client.
-
-    Thinking-mode round-trip is the only DeepSeek-specific behavior that
-    stays here. When DeepSeek's thinking models return a response with
-    ``reasoning_content``, that field must be echoed back as part of the
-    assistant message on the next turn or the API fails with HTTP 400.
-    ``_create_chat_result`` captures it on receive and
-    ``_get_request_payload`` re-attaches it on send.
-
-    Tool-choice handling for V4 and reasoner — those models reject the
-    ``tool_choice`` parameter — is handled by the capability dispatch in
-    ``NormalizedChatOpenAI.with_structured_output``, not here.
-    """
+class ReasoningContentChatOpenAI(NormalizedChatOpenAI):
+    """Preserve reasoning_content across tool calls for providers that require it."""
 
     def _get_request_payload(self, input_, *, stop=None, **kwargs):
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
@@ -129,7 +117,11 @@ class DeepSeekChatOpenAI(NormalizedChatOpenAI):
         return chat_result
 
 
-class MinimaxChatOpenAI(NormalizedChatOpenAI):
+class DeepSeekChatOpenAI(ReasoningContentChatOpenAI):
+    """DeepSeek OpenAI-compatible client with reasoning history."""
+
+
+class MinimaxChatOpenAI(ReasoningContentChatOpenAI):
     """MiniMax-specific overrides on top of the OpenAI-compatible client.
 
     M2.x reasoning models embed ``<think>...</think>`` blocks directly in
@@ -141,7 +133,7 @@ class MinimaxChatOpenAI(NormalizedChatOpenAI):
     top-level params and rejects unknown ones like reasoning_split (#826).
 
     The flag is gated by ``ModelCapabilities.requires_reasoning_split`` so
-    only M2.x reasoning models receive it; non-reasoning MiniMax endpoints
+    only reasoning models receive it; non-reasoning MiniMax endpoints
     (Coding Plan, MiniMax-Text-01) never see it.
 
     Tool-choice handling for M2.x — those models accept only the string
@@ -168,11 +160,11 @@ _PASSTHROUGH_KWARGS = (
     "api_key", "callbacks", "http_client", "http_async_client",
 )
 
-# OpenAI's ``reasoning_effort`` is only accepted by reasoning models — the GPT-5
-# family and the o-series. Non-reasoning models (gpt-4.1, gpt-4o, ...) 400 with
+# OpenAI's ``reasoning_effort`` is only accepted by reasoning models — the GPT-5 and GPT-6
+# families and the o-series. Non-reasoning models (gpt-4.1, gpt-4o, ...) 400 with
 # "Unsupported parameter: 'reasoning.effort' is not supported with this model".
 # Drop the kwarg for those rather than crash the run.
-_OPENAI_REASONING_MODEL = re.compile(r"^(gpt-5|o[1-9])")
+_OPENAI_REASONING_MODEL = re.compile(r"^(gpt-[56]|o[1-9])")
 
 
 def _supports_reasoning_effort(model: str) -> bool:
@@ -327,7 +319,15 @@ class OpenAIClient(BaseLLMClient):
                 continue
             if key == "reasoning_effort" and not _supports_reasoning_effort(self.model):
                 continue
-            llm_kwargs[key] = self.kwargs[key]
+            value = self.kwargs[key]
+            if (
+                key == "reasoning_effort"
+                and value == "none"
+                and self.provider == "openai"
+                and self.model.lower().startswith("gpt-6.2-")
+            ):
+                value = "low"
+            llm_kwargs[key] = value
 
         # The subclass (provider quirks) comes from the registry spec.
         return chat_cls(**llm_kwargs)

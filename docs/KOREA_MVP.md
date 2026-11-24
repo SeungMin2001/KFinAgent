@@ -1,110 +1,40 @@
-# Korean Stock Research MVP
+# Korean stock research
 
-This is the first Korean-market adaptation of TradingAgents. It is a
-**research-only** workflow: it retrieves adjusted domestic daily OHLCV from
-Korea Investment & Securities (KIS), lets the existing market/research/risk
-agents form an opinion, and writes a report. It has no order, balance, or
-account tools.
+Follow the Quickstart in the repository README to create a Python 3.12
+environment and configure your own provider credentials.
 
-## What changed
+## Research modes
 
-- Added the `kis` data vendor for the official domestic daily-chart endpoint.
-- Maps KIS fields into `date, open, high, low, close, volume, amount`.
-- Calculates SMA, EMA, MACD, RSI, Bollinger Bands, ATR, and VWMA from KIS bars.
-- The base mode enables only the Market Analyst. `--enhanced` inserts three
-  source-bounded Evidence Analysts for OpenDART disclosures, FRED/ECOS macro,
-  and KIS investor flow before the Market Analyst.
-- `--enhanced --kronos-mode remote` additionally sends the exact verified KIS
-  candle set to the configured Kronos API, then adds a separate time-series
-  evidence report. It never attributes a forecast to disclosures or macro data
-  that Kronos did not receive as model input.
-- Disables yfinance-based company-identity lookup and reflection memory, so the
-  workflow's market data stays KIS-only.
+- Basic mode uses KIS daily bars and computed indicators.
+- Enhanced mode also collects KIS investor flows and headlines, OpenDART
+  filings and periodic financial evidence, and ECOS and FRED macro data.
+- The optional Kronos forecast uses the same verified KIS history. The default
+  sends 40 daily bars and samples 10 paths over a 12-bar forecast horizon.
+- The Quickstart disables read-only balance lookup with
+  `--account-mode disabled`. The workflow never places orders.
 
-## Setup
+Check the selected configuration before making a request:
 
 ```bash
-bash scripts/bootstrap_local_env.sh
-cp .env.example .env
+python scripts/korean_stock_research.py 005930 --account-mode disabled --kronos-mode disabled --check-config
 ```
 
-The bootstrap requires Python 3.12 and creates a machine-specific environment
-under `~/.virtualenvs/`, outside the iCloud-synchronised project. Override the
-interpreter with `PYTHON_BIN` or the parent directory with `STOCK_VENV_ROOT`.
-Never sync or reuse a virtual environment between the iMac and MacBook: venv
-launchers contain absolute paths to the Python installation that created them.
-Use `bash scripts/bootstrap_local_env.sh --print-path` to show the environment
-path selected for the current Mac.
+Add `--enhanced` to include its credential checks. This command checks local
+configuration only. Use `--verbose` with an actual run to see analyst stages.
 
-Set `KIS_APP_KEY`, `KIS_APP_SECRET`, and an LLM key in `.env`. `KIS_ENV=demo`
-uses the KIS virtual-investment host; `real` uses the production host. The KIS
-credentials must have access to domestic-stock quotation APIs.
+## Reports
 
-## Run
+Completed runs write `0_evidence.md`, `complete_report.md`, `FINAL_BRIEF.md`,
+and `visuals/market_overview.svg` under `artifacts/reports/`. The evidence file
+records the data and as-of dates that the LLM received. Forecast observations
+are stored separately from filings and macro inputs in the analyst reports.
 
-```bash
-~/.virtualenvs/stock-<Mac-name>-py312/bin/python scripts/korean_stock_research.py 005930 --date 2026-09-02 --enhanced --kronos-mode remote
-```
+## Limits
 
-The output is a research rating such as `Buy`, `Hold`, or `Sell`, plus a
-Markdown report under `~/.tradingagents/logs/reports/`. It is not an order.
-
-## Verification without credentials
-
-The KIS provider has mocked HTTP tests that validate token authentication,
-official response-field mapping, chronological sorting, and Korean-only config.
-
-```bash
-~/.virtualenvs/stock-<Mac-name>-py312/bin/pytest tests/test_kis_provider.py -q
-```
-
-Use `--verbose` with the research script to print every completed analyst and
-debate output to the terminal as the workflow runs. Without it, the script
-prints only concise stage progress; the full report is still saved to disk.
-
-Every completed research run writes `0_evidence.md` beside `complete_report.md`.
-It records the immutable source-attributed snapshot collected before LLM work.
-In enhanced mode each Evidence Analyst receives only its assigned source
-sections; the Market Analyst receives verified prices/indicators plus their
-normalized reports. When Kronos is enabled, its model-input context and
-probabilistic output are normalized separately in `kronos.md`; this is not a
-causal explanation or investment recommendation. These reports are saved under
-`1_analysts/`.
-
-Those tests are only unit tests. The executable does not use their fake
-responses: it first fetches a real KIS market-data snapshot and exits before
-the agent starts if KIS authentication, network access, or market data fails.
-
-## Kronos connection
-
-The enhanced workflow is being added with three additional credential scopes:
-`DART_API_KEY` for official filings, `ECOS_API_KEY` for Bank of Korea macro
-statistics, and `KRONOS_API_URL` / `KRONOS_API_KEY` for the separately hosted
-Kronos GPU service. Use `KRONOS_MODE=remote` and an HTTPS URL ending in
-`/v1/forecast`. The service is strict: if it is selected and unavailable, the
-research run stops rather than omitting the forecast. See [Kronos on RunPod](KRONOS_RUNPOD.md).
-
-The default daily protocol mirrors the paper's forecasting experiment: 40
-historical OHLCVA K-lines, 12 future K-lines, temperature 0.6, top-p 0.9, and
-10 sampled paths. It is a protocol match, not a claim that its Korean-market
-performance has been reproduced.
-
-## Known limits
-
-- KIS daily quotations are fetched in 90-calendar-day windows because the
-  official endpoint limits a response to roughly 100 observations.
-- Current functionality is daily-bar research only; intraday and live-streaming
-  data are not part of this MVP.
-- Future Kronos timestamps currently use weekday business days. A KRX session
-  calendar is still required before treating a live forecast schedule as an
-  exact reproduction of the paper's known future K-line timestamps.
-- OpenDART original-document ZIP/XML files are downloaded for the ten selected
-  filings. All extracted visible text is processed; large disclosure corpora
-  are split into configurable 60,000-character chunks, normalized separately,
-  and consolidated into one Disclosure Evidence report without silently
-  dropping a filing.
-- ECOS observations are bounded by the analysis date, but ECOS does not expose
-  historical data vintages. Revised values can therefore still leak into a
-  strict historical backtest unless daily source snapshots are archived.
-- This is not a backtest or a trading system. Kronos is a separate forecast
-  input; its incremental value must still be evaluated out of sample.
+- Research uses daily bars and the latest finalized investor-flow rows
+  available to KIS. Trading days in a Kronos forecast are currently weekdays
+  and can differ from the KRX calendar.
+- ECOS supplies observation dates without historical vintages. Later revisions
+  can affect historical analysis.
+- Recorded backtests are case studies. They do not establish forecast or
+  investment performance on future data.

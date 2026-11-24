@@ -38,6 +38,11 @@ def _supports_effort(model: str) -> bool:
     return (major, minor) >= _EFFORT_MIN_VERSION[family]
 
 
+_NATIVE_STRUCTURED_MODELS = {
+    "claude-fable-5-2", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5",
+}
+
+
 class NormalizedChatAnthropic(ChatAnthropic):
     """ChatAnthropic with normalized content output.
 
@@ -48,6 +53,13 @@ class NormalizedChatAnthropic(ChatAnthropic):
 
     def invoke(self, input, config=None, **kwargs):
         return normalize_content(super().invoke(input, config, **kwargs))
+
+    def with_structured_output(self, schema, *, method=None, **kwargs):
+        # New Claude models can reject forced tool choice. Native JSON-schema
+        # output keeps reasoning enabled and returns the same Pydantic result.
+        if method is None:
+            method = "json_schema" if self.model in _NATIVE_STRUCTURED_MODELS else "function_calling"
+        return super().with_structured_output(schema, method=method, **kwargs)
 
 
 class AnthropicClient(BaseLLMClient):

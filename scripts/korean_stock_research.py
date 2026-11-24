@@ -10,6 +10,7 @@ domestic-stock balance lookup.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -23,10 +24,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# Load machine-local credentials/config before importing DEFAULT_CONFIG.
-# The source directory may be shared through iCloud, but no absolute path is
-# assumed and each Mac can keep its own process environment if desired.
-load_dotenv(PROJECT_ROOT / ".env")
+# Load the checkout's configuration before importing DEFAULT_CONFIG during CLI
+# execution. Importing the module itself must not load a developer's secrets.
+if __name__ == "__main__":
+    load_dotenv(PROJECT_ROOT / ".env")
 
 from tradingagents.korea import (  # noqa: E402, I001
     create_korean_stock_graph,
@@ -35,7 +36,14 @@ from tradingagents.korea import (  # noqa: E402, I001
 )
 from tradingagents.dataflows.korean_evidence import enhanced_korean_evidence  # noqa: E402, I001
 from tradingagents.dataflows.kronos import KronosSettings  # noqa: E402, I001
-from tradingagents.dataflows.kis import get_kis_account_snapshot  # noqa: E402, I001
+from tradingagents.dataflows.kis import (  # noqa: E402, I001
+    KisAccountSettings,
+    KisSettings,
+    get_kis_account_snapshot,
+)
+from tradingagents.llm_clients.api_key_env import PROVIDER_API_KEY_ENV  # noqa: E402, I001
+from tradingagents.llm_clients.model_catalog import MODEL_OPTIONS  # noqa: E402, I001
+from tradingagents.llm_clients.openai_client import OPENAI_COMPATIBLE_PROVIDERS  # noqa: E402, I001
 from tradingagents.report_history import load_prior_report_context  # noqa: E402, I001
 from tradingagents.visuals import (  # noqa: E402, I001
     append_visual_section,
@@ -182,11 +190,47 @@ def write_evidence_manifest(
     return target
 
 
+def check_research_config(config: dict[str, Any], args: argparse.Namespace) -> None:
+    """Validate the selected local settings before contacting a provider."""
+    KisSettings.from_env()
+    if args.account_mode == "required":
+        KisAccountSettings.from_env()
+
+    provider = config["llm_provider"]
+    if provider not in PROVIDER_API_KEY_ENV:
+        raise ValueError("Unknown LLM provider. Check TRADINGAGENTS_LLM_PROVIDER in .env.")
+
+    key_var = PROVIDER_API_KEY_ENV[provider]
+    spec = OPENAI_COMPATIBLE_PROVIDERS.get(provider)
+    if spec and spec.require_base_url and not config.get("backend_url"):
+        raise ValueError("Set TRADINGAGENTS_LLM_BACKEND_URL for the openai_compatible provider.")
+
+    required = ["DART_API_KEY", "FRED_API_KEY", "ECOS_API_KEY"] if args.enhanced else []
+    has_google_alias = provider == "google" and os.getenv("GEMINI_API_KEY", "").strip()
+    if key_var and not (spec and spec.key_optional) and not has_google_alias:
+        required.append(key_var)
+    missing = [name for name in required if not os.getenv(name, "").strip()]
+    if missing:
+        raise ValueError(f"Set {', '.join(missing)} in .env before running this mode.")
+
+    options = MODEL_OPTIONS.get(provider, {})
+    if not args.model:
+        for mode in ("quick", "deep"):
+            model_env = f"TRADINGAGENTS_{mode.upper()}_THINK_LLM"
+            models = options.get(mode, ())
+            if (not models or models[0][1] == "custom") and not os.getenv(model_env, "").strip():
+                raise ValueError(
+                    "Set both TRADINGAGENTS_QUICK_THINK_LLM and TRADINGAGENTS_DEEP_THINK_LLM "
+                    "or pass --model for this provider."
+                )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="KIS-based Korean stock research with read-only account context (no order execution).")
     parser.add_argument("symbol", help="Six-digit KRX stock code, e.g. 005930")
     parser.add_argument("--date", default=date.today().isoformat(), help="Analysis date (YYYY-MM-DD)")
     parser.add_argument("--model", help="Override the LLM used for both research and quick steps")
+    parser.add_argument("--check-config", action="store_true", help="Check local configuration and exit without API calls")
     parser.add_argument("--debug", action="store_true", help="Print LangGraph messages while running")
     parser.add_argument("--verbose", action="store_true", help="Print each agent's completed analysis and debate output")
     parser.add_argument("--enhanced", action="store_true", help="Require DART, FRED, ECOS, and KIS investor-flow evidence")
@@ -219,8 +263,14 @@ def main() -> None:
     if args.global_risk and not args.enhanced:
         parser.error("--global-risk requires --enhanced")
 
-    if not args.symbol.isdigit() or len(args.symbol) != 6:
+    if not args.symbol.isascii() or not args.symbol.isdigit() or len(args.symbol) != 6:
         parser.error("symbol must be a six-digit KRX code, for example 005930")
+    try:
+        analysis_date = date.fromisoformat(args.date)
+    except ValueError:
+        parser.error("--date must be a valid date in YYYY-MM-DD format")
+    if args.date != analysis_date.isoformat() or analysis_date > date.today():
+        parser.error("--date must be in YYYY-MM-DD format and on or before today")
 
     try:
         kronos_mode = KronosSettings.from_env(args.kronos_mode).mode
@@ -247,6 +297,15 @@ def main() -> None:
     }
     if args.model:
         overrides.update({"deep_think_llm": args.model, "quick_think_llm": args.model})
+
+    config = korean_stock_config(overrides)
+    try:
+        check_research_config(config, args)
+    except ValueError as exc:
+        parser.exit(2, f"Configuration check failed: {exc}\n")
+    if args.check_config:
+        print("Local configuration looks complete. Provider access has not been tested.")
+        return
 
     try:
         # Do this before constructing/running the agent workflow.  There is no
@@ -276,7 +335,7 @@ def main() -> None:
                 args.symbol,
                 args.date,
                 snapshot,
-                config=korean_stock_config(overrides),
+                config=config,
                 market_bars=market_bars,
             )
         except Exception as exc:  # noqa: BLE001 - enhanced mode is deliberately strict
@@ -296,18 +355,31 @@ def main() -> None:
     else:
         print(f"[진행] 이전 {args.symbol} 리포트 없음 (현재 분석일 이전 기준)", flush=True)
 
-    graph = create_korean_stock_graph(
-        {**overrides, "enable_korean_evidence_agents": args.enhanced},
-        debug=args.debug,
-        progress_callback=make_progress_printer(args.verbose),
-    )
-    state, signal = graph.propagate(
-        args.symbol,
-        args.date,
-        verified_market_snapshot=snapshot,
-        account_snapshot=account_snapshot,
-        historical_report_context=historical_report_context,
-    )
+    try:
+        graph = create_korean_stock_graph(
+            {**overrides, "enable_korean_evidence_agents": args.enhanced},
+            debug=args.debug,
+            progress_callback=make_progress_printer(args.verbose),
+        )
+        state, signal = graph.propagate(
+            args.symbol,
+            args.date,
+            verified_market_snapshot=snapshot,
+            account_snapshot=account_snapshot,
+            historical_report_context=historical_report_context,
+        )
+    except Exception as exc:
+        if args.debug:
+            raise
+        status = getattr(exc, "status_code", None)
+        detail = type(exc).__name__
+        if isinstance(status, int):
+            detail += f", HTTP {status}"
+        parser.exit(
+            1,
+            f"Research workflow failed ({detail}). Check provider access and model settings. "
+            "Use --debug for details locally and remove credentials before sharing logs.\n",
+        )
     path = graph.save_reports(state, args.symbol)
     visual_path = write_market_overview_svg(path.parent / "visuals", market_bars, snapshot)
     append_visual_section(path, visual_path)

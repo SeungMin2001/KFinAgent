@@ -45,12 +45,15 @@ _GLM_MODELS: dict[str, list[ModelOption]] = {
 # "Custom model ID".
 _QWEN_MODELS: dict[str, list[ModelOption]] = {
     "quick": [
-        ("Qwen 3.7 Plus - Latest, balanced speed/cost", "qwen3.7-plus"),
+        ("Qwen 3.8 Flash - Fast, cost-efficient", "qwen3.8-flash"),
+        ("Qwen 3.7 Plus - Balanced speed and cost", "qwen3.7-plus"),
         ("Qwen 3.6 Plus - Previous-gen balanced", "qwen3.6-plus"),
         ("Custom model ID", "custom"),
     ],
     "deep": [
-        ("Qwen 3.7 Max - Latest flagship, most intelligent, 1M ctx", "qwen3.7-max"),
+        ("Qwen4 Max - Flagship reasoning model", "qwen4-max"),
+        ("Qwen 3.8 Max - Previous flagship", "qwen3.8-max"),
+        ("Qwen 3.7 Max - Earlier flagship", "qwen3.7-max"),
         ("Qwen 3.6 Max - Previous-gen flagship", "qwen3.6-max"),
         ("Qwen 3.7 Plus - Balanced alternative", "qwen3.7-plus"),
         ("Custom model ID", "custom"),
@@ -63,13 +66,15 @@ _QWEN_MODELS: dict[str, list[ModelOption]] = {
 # M3 carries a 1M-token context window; the M2.x line is 204,800 tokens.
 _MINIMAX_MODELS: dict[str, list[ModelOption]] = {
     "quick": [
-        ("MiniMax-M3 - Latest, 1M ctx, native multimodal", "MiniMax-M3"),
+        ("MiniMax M3.1 Flash - Fast multimodal reasoning", "MiniMax-M3.1-Flash"),
+        ("MiniMax M3 - 1M context, native multimodal", "MiniMax-M3"),
         ("MiniMax-M2.7-highspeed - Fast M2.7, 204K ctx, ~100 TPS", "MiniMax-M2.7-highspeed"),
         ("MiniMax-M2.5-highspeed - Previous-gen highspeed, 204K ctx", "MiniMax-M2.5-highspeed"),
         ("Custom model ID", "custom"),
     ],
     "deep": [
-        ("MiniMax-M3 - Latest flagship, 1M ctx, multimodal coding/agent", "MiniMax-M3"),
+        ("MiniMax M3.1 Flash - Latest, tunable reasoning depth", "MiniMax-M3.1-Flash"),
+        ("MiniMax M3 - Previous flagship", "MiniMax-M3"),
         ("MiniMax-M2.7 - Previous flagship, 204K ctx", "MiniMax-M2.7"),
         ("MiniMax-M2.7-highspeed - Same quality as M2.7, ~100 TPS", "MiniMax-M2.7-highspeed"),
         ("MiniMax-M2.5 - Earlier flagship, 204K ctx", "MiniMax-M2.5"),
@@ -81,12 +86,16 @@ _MINIMAX_MODELS: dict[str, list[ModelOption]] = {
 MODEL_OPTIONS: ProviderModeOptions = {
     "openai": {
         "quick": [
-            ("GPT-5.6 Luna - Fast, cost-efficient frontier", "gpt-5.6-luna"),
+            ("GPT-6 Luna - Fast, cost-efficient", "gpt-6-luna"),
+            ("GPT-6.1 Terra - Efficient multimodal reasoning", "gpt-6.1-terra"),
+            ("GPT-5.6 Luna - Previous fast model", "gpt-5.6-luna"),
             ("GPT-5.6 Terra - Balances intelligence and cost", "gpt-5.6-terra"),
             ("GPT-5.4 Mini - Fast, strong coding and tool use", "gpt-5.4-mini"),
         ],
         "deep": [
-            ("GPT-5.6 - Latest frontier reasoning (Sol)", "gpt-5.6"),
+            ("GPT-6.2 Sol - Everyday agent workflows", "gpt-6.2-sol"),
+            ("GPT-6.2 Astra - Flagship reasoning", "gpt-6.2-astra"),
+            ("GPT-5.6 Sol - Previous flagship", "gpt-5.6"),
             ("GPT-5.6 Terra - Balances intelligence and cost", "gpt-5.6-terra"),
             ("GPT-5.5 - Previous-gen frontier, 1M context", "gpt-5.5"),
             ("GPT-5.4 - Cost-effective, 1M context", "gpt-5.4"),
@@ -94,11 +103,16 @@ MODEL_OPTIONS: ProviderModeOptions = {
     },
     "anthropic": {
         "quick": [
-            ("Claude Sonnet 5 - Best speed and intelligence balance", "claude-sonnet-5"),
+            ("Claude Haiku 5.5 - Low latency and cost", "claude-haiku-5-5"),
+            ("Claude Sonnet 5.5 - Balanced performance", "claude-sonnet-5-5"),
+            ("Claude Sonnet 5 - Previous balanced model", "claude-sonnet-5"),
             ("Claude Haiku 4.5 - Fastest with near-frontier intelligence", "claude-haiku-4-5"),
         ],
         "deep": [
-            ("Claude Fable 5 - Most capable, long-running agents", "claude-fable-5"),
+            ("Claude Opus 5.5 - Recommended for complex work", "claude-opus-5-5"),
+            ("Claude Fable 5.2 - Demanding long-horizon reasoning", "claude-fable-5-2"),
+            ("Claude Sonnet 5.5 - Balanced performance", "claude-sonnet-5-5"),
+            ("Claude Fable 5 - Earlier reasoning model", "claude-fable-5"),
             ("Claude Opus 4.8 - Frontier agentic coding and reasoning", "claude-opus-4-8"),
             ("Claude Sonnet 5 - Near-frontier intelligence at Sonnet cost", "claude-sonnet-5"),
             ("Claude Opus 4.7 - Previous frontier, long-running agents", "claude-opus-4-7"),
@@ -106,38 +120,44 @@ MODEL_OPTIONS: ProviderModeOptions = {
     },
     "google": {
         "quick": [
-            ("Gemini 3.5 Flash - Latest, frontier agentic + coding (GA)", "gemini-3.5-flash"),
+            ("Gemini 4 Hydrogen - Fast everyday agent workflows", "gemini-4-hydrogen"),
+            ("Gemini 3.8 Flash - Previous-generation Flash", "gemini-3.8-flash"),
+            ("Gemini 3.5 Flash - Earlier Flash model", "gemini-3.5-flash"),
             ("Gemini 3.1 Flash Lite - Most cost-efficient", "gemini-3.1-flash-lite"),
         ],
         "deep": [
-            ("Gemini 3.1 Pro - Reasoning-first, complex workflows (preview)", "gemini-3.1-pro-preview"),
-            ("Gemini 3.5 Flash - Latest GA, strong agentic + coding", "gemini-3.5-flash"),
+            ("Gemini 4 Neon - Frontier reasoning and speed", "gemini-4-neon"),
+            ("Gemini 4 Carbon - Flagship reasoning", "gemini-4-carbon"),
+            ("Gemini 4 Argon - Efficient frontier reasoning", "gemini-4-argon"),
+            ("Gemini 3.8 Flash - Previous-generation Flash", "gemini-3.8-flash"),
         ],
     },
     "xai": {
         "quick": [
-            ("Grok 4.3 - Latest flagship, fast with built-in reasoning", "grok-4.3"),
+            ("Grok 4.7 - Current flagship", "grok-4.7"),
+            ("Grok 4.3 - Earlier reasoning model", "grok-4.3"),
             ("Grok 4.20 (Non-Reasoning) - Speed-optimized", "grok-4.20-0309-non-reasoning"),
             ("Grok Build 0.1 - Coding-specialized, 256K ctx", "grok-build-0.1"),
         ],
         "deep": [
-            ("Grok 4.3 - Latest flagship, built-in reasoning, 1M ctx", "grok-4.3"),
+            ("Grok 4.7 - Current flagship", "grok-4.7"),
+            ("Grok 4.6 - Previous flagship", "grok-4.6"),
+            ("Grok 4.3 - Earlier reasoning model", "grok-4.3"),
             ("Grok 4.20 (Reasoning) - Previous-gen reasoning", "grok-4.20-0309-reasoning"),
             ("Grok 4.20 Multi-Agent - Multi-agent reasoning", "grok-4.20-multi-agent-0309"),
         ],
     },
-    # DeepSeek: the deepseek-chat / deepseek-reasoner aliases are deprecated
-    # (2026-07-24) and now map to V4 Flash; expose the V4 IDs directly. V4 Flash
-    # serves both non-thinking and thinking modes (the DeepSeekChatOpenAI client
-    # handles the reasoning_content round-trip).
+    # DeepSeek recommends deepseek-flash for the current V4.1 Flash release.
+    # Keep older explicit IDs valid for existing configurations.
     "deepseek": {
         "quick": [
-            ("DeepSeek V4 Flash - Latest fast model, thinking + non-thinking", "deepseek-v4-flash"),
+            ("DeepSeek V4.1 Flash - Fast model", "deepseek-flash"),
             ("Custom model ID", "custom"),
         ],
         "deep": [
-            ("DeepSeek V4 Pro - Latest flagship", "deepseek-v4-pro"),
-            ("DeepSeek V4 Flash - Fast, supports thinking", "deepseek-v4-flash"),
+            ("DeepSeek V4 Pro - Pro tier", "deepseek-v4-pro"),
+            ("DeepSeek V4.1 Flash - Fast model", "deepseek-flash"),
+            ("DeepSeek V4 Flash - Legacy alias", "deepseek-v4-flash"),
             ("Custom model ID", "custom"),
         ],
     },

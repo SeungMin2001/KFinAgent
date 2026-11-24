@@ -17,6 +17,7 @@ from tradingagents.llm_clients.openai_client import (
     "model,expected",
     [
         ("gpt-5.5", True), ("gpt-5.4", True), ("gpt-5.4-mini", True),
+        ("gpt-6.2-sol", True), ("gpt-6-luna", True),
         ("gpt-5.5-pro", True), ("o1", True), ("o3-mini", True),
         ("gpt-4.1", False), ("gpt-4o", False), ("gpt-4o-mini", False),
         ("gpt-3.5-turbo", False),
@@ -40,3 +41,13 @@ def test_reasoning_model_receives_effort(monkeypatch):
 def test_non_reasoning_model_drops_effort(monkeypatch):
     # gpt-4.1 would 400 with reasoning_effort — it must be dropped.
     assert _effort_on("gpt-4.1", monkeypatch) is None
+
+
+@pytest.mark.parametrize("model,expected", [("gpt-6.2-sol", "low"), ("gpt-6-luna", "none")])
+def test_gpt6_reasoning_effort_respects_model_support(model, expected, monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    llm = OpenAIClient(model, reasoning_effort="none").get_llm()
+    payload = llm._get_request_payload("Test")
+    assert llm.use_responses_api
+    assert payload["model"] == model
+    assert payload["reasoning"] == {"effort": expected}

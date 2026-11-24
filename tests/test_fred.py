@@ -8,6 +8,7 @@ import unittest
 from unittest import mock
 
 import pytest
+import requests
 
 import tradingagents.dataflows.config as config_module
 import tradingagents.default_config as default_config
@@ -233,3 +234,20 @@ class FredRoutingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_fred_http_error_does_not_print_credential(monkeypatch):
+    key = "fred-example-private-key"
+
+    def get(url, params, **kwargs):
+        response = requests.Response()
+        response.url = f"{url}?api_key={params['api_key']}"
+        response.status_code = 503
+        return response
+
+    monkeypatch.setenv("FRED_API_KEY", key)
+    monkeypatch.setattr(fred.requests, "get", get)
+    with pytest.raises(RuntimeError, match="HTTP 503") as error:
+        fred._request("series", {"series_id": "UNRATE"})
+    assert key not in str(error.value)
+    assert error.value.__suppress_context__
